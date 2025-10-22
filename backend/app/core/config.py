@@ -65,7 +65,7 @@ class Settings(BaseSettings):
 
     # Security Settings
     CORS_ORIGINS: list[str] = Field(default=["http://localhost:3000", "http://localhost:8000"])
-    TRUSTED_HOSTS: list[str] = Field(default=["localhost", "127.0.0.1"])
+    TRUSTED_HOSTS: list[str] = Field(default=["*"])
     RATE_LIMIT_PER_MINUTE: int = 60
     LINK_CODE_LENGTH: int = 8
 
