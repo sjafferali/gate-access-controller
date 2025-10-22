@@ -1,10 +1,9 @@
 """Application configuration using Pydantic Settings"""
 
 import secrets
-from typing import Any, List, Optional, Union
 from enum import Enum
 
-from pydantic import AnyHttpUrl, Field, PostgresDsn, field_validator, model_validator
+from pydantic import Field, PostgresDsn, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -51,25 +50,22 @@ class Settings(BaseSettings):
     SQLITE_DATABASE_PATH: str = "./gate_access.db"
 
     # PostgreSQL Settings
-    POSTGRES_HOST: Optional[str] = "localhost"
-    POSTGRES_PORT: Optional[int] = 5432
-    POSTGRES_USER: Optional[str] = "gateadmin"
-    POSTGRES_PASSWORD: Optional[str] = None
-    POSTGRES_DB: Optional[str] = "gate_access_db"
-    DATABASE_URL: Optional[str] = None
-
+    POSTGRES_HOST: str | None = "localhost"
+    POSTGRES_PORT: int | None = 5432
+    POSTGRES_USER: str | None = "gateadmin"
+    POSTGRES_PASSWORD: str | None = None
+    POSTGRES_DB: str | None = "gate_access_db"
+    DATABASE_URL: str | None = None
 
     # Gate Webhook Settings
-    GATE_WEBHOOK_URL: Optional[str] = None
-    GATE_WEBHOOK_TOKEN: Optional[str] = None
+    GATE_WEBHOOK_URL: str | None = None
+    GATE_WEBHOOK_TOKEN: str | None = None
     GATE_WEBHOOK_TIMEOUT: int = 10
     GATE_OPEN_DURATION_SECONDS: int = 5
 
     # Security Settings
-    CORS_ORIGINS: List[str] = Field(
-        default=["http://localhost:3000", "http://localhost:8000"]
-    )
-    TRUSTED_HOSTS: List[str] = Field(default=["localhost", "127.0.0.1"])
+    CORS_ORIGINS: list[str] = Field(default=["http://localhost:3000", "http://localhost:8000"])
+    TRUSTED_HOSTS: list[str] = Field(default=["localhost", "127.0.0.1"])
     RATE_LIMIT_PER_MINUTE: int = 60
     LINK_CODE_LENGTH: int = 8
 
@@ -83,24 +79,24 @@ class Settings(BaseSettings):
     LOG_FILE_PATH: str = "./logs/gate_access.log"
 
     # Monitoring
-    SENTRY_DSN: Optional[str] = None
-    SENTRY_ENVIRONMENT: Optional[str] = None
+    SENTRY_DSN: str | None = None
+    SENTRY_ENVIRONMENT: str | None = None
 
     @field_validator("CORS_ORIGINS", mode="before")
     @classmethod
-    def assemble_cors_origins(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+    def assemble_cors_origins(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        elif isinstance(v, list | str):
             return v
         raise ValueError(v)
 
     @field_validator("TRUSTED_HOSTS", mode="before")
     @classmethod
-    def assemble_trusted_hosts(cls, v: Union[str, List[str]]) -> Union[List[str], str]:
+    def assemble_trusted_hosts(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
-        elif isinstance(v, (list, str)):
+        elif isinstance(v, list | str):
             return v
         raise ValueError(v)
 

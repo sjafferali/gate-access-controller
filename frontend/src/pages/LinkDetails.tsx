@@ -19,7 +19,7 @@ export default function LinkDetails() {
   const copyLinkUrl = () => {
     if (link) {
       const url = `${window.location.origin}/access/${link.link_code}`
-      navigator.clipboard.writeText(url)
+      void navigator.clipboard.writeText(url)
       toast.success('Link URL copied to clipboard')
     }
   }
@@ -43,7 +43,9 @@ export default function LinkDetails() {
         <div className="card border-red-200 bg-red-50 py-6 text-center">
           <p className="text-red-600">Link not found</p>
           <button
-            onClick={() => navigate('/links')}
+            onClick={() => {
+              void navigate('/links')
+            }}
             className="mt-4 text-sm text-primary-600 hover:text-primary-700"
           >
             Back to Links
@@ -62,7 +64,9 @@ export default function LinkDetails() {
         </div>
         <div className="flex space-x-2">
           <button
-            onClick={() => navigate(`/links/${linkId}/edit`)}
+            onClick={() => {
+              void navigate(`/links/${linkId}/edit`)
+            }}
             className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
           >
             <FiEdit className="mr-2 h-4 w-4" />
@@ -81,10 +85,10 @@ export default function LinkDetails() {
                   link.status === LinkStatus.ACTIVE
                     ? 'bg-green-100 text-green-800'
                     : link.status === LinkStatus.EXPIRED
-                    ? 'bg-gray-100 text-gray-800'
-                    : link.status === LinkStatus.DISABLED
-                    ? 'bg-yellow-100 text-yellow-800'
-                    : 'bg-red-100 text-red-800'
+                      ? 'bg-gray-100 text-gray-800'
+                      : link.status === LinkStatus.DISABLED
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
                 }`}
               >
                 {link.status}
@@ -118,17 +122,13 @@ export default function LinkDetails() {
 
           <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
             <dt className="text-sm font-medium text-gray-500">Purpose</dt>
-            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-              {link.purpose}
-            </dd>
+            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{link.purpose}</dd>
           </div>
 
           {link.notes && (
             <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
               <dt className="text-sm font-medium text-gray-500">Notes</dt>
-              <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-                {link.notes}
-              </dd>
+              <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{link.notes}</dd>
             </div>
           )}
 

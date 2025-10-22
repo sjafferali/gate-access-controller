@@ -3,7 +3,9 @@ import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { FiLock, FiUnlock, FiAlertCircle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
+import { AxiosError } from 'axios'
 import { validationApi } from '@/services/api'
+import { type ErrorResponse } from '@/types'
 
 export default function AccessPortal() {
   const { linkCode } = useParams<{ linkCode: string }>()
@@ -22,8 +24,8 @@ export default function AccessPortal() {
       toast.success(response.message)
       setIsRequesting(false)
     },
-    onError: (error: any) => {
-      const message = error.response?.data?.detail || 'Access denied'
+    onError: (error: AxiosError<ErrorResponse>) => {
+      const message = error.response?.data?.message || 'Access denied'
       toast.error(message)
       setIsRequesting(false)
     },
@@ -85,15 +87,11 @@ export default function AccessPortal() {
 
           <div className="mb-6 rounded-lg bg-gray-50 p-4">
             <h2 className="mb-2 text-base font-semibold text-gray-900 sm:text-lg">{data.name}</h2>
-            {data.notes && (
-              <p className="text-sm text-gray-600 sm:text-base">{data.notes}</p>
-            )}
+            {data.notes && <p className="text-sm text-gray-600 sm:text-base">{data.notes}</p>}
             <div className="mt-3">
               <span
                 className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
-                  data.is_valid
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-red-100 text-red-800'
+                  data.is_valid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}
               >
                 {data.message}
@@ -105,7 +103,7 @@ export default function AccessPortal() {
             <button
               onClick={handleRequestAccess}
               disabled={isRequesting}
-              className="w-full rounded-lg bg-primary-600 px-6 py-4 text-base font-semibold text-white shadow-lg hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 active:scale-95 transition-all sm:text-lg"
+              className="w-full rounded-lg bg-primary-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
             >
               {isRequesting ? 'Opening Gate...' : 'Request Access'}
             </button>

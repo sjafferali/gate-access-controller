@@ -3,12 +3,10 @@
 import logging
 import sys
 from pathlib import Path
-from typing import Any, Dict
 
 import structlog
-from structlog.processors import CallsiteParameter
-
 from app.core.config import settings
+from structlog.processors import CallsiteParameter
 
 
 def setup_logging() -> None:
@@ -45,23 +43,27 @@ def setup_logging() -> None:
 
     # Add different processors based on environment and format
     if settings.LOG_FORMAT == "json":
-        processors.extend([
-            structlog.processors.format_exc_info,
-            structlog.processors.dict_tracebacks,
-            structlog.processors.JSONRenderer(),
-        ])
+        processors.extend(
+            [
+                structlog.processors.format_exc_info,
+                structlog.processors.dict_tracebacks,
+                structlog.processors.JSONRenderer(),
+            ]
+        )
     else:
-        processors.extend([
-            structlog.processors.format_exc_info,
-            structlog.dev.ConsoleRenderer(
-                colors=settings.is_development,
-                exception_formatter=structlog.dev.rich_traceback if settings.is_development else None,
-            ),
-        ])
+        processors.extend(
+            [
+                structlog.processors.format_exc_info,
+                structlog.dev.ConsoleRenderer(
+                    colors=settings.is_development,
+                    exception_formatter=structlog.dev.rich_traceback if settings.is_development else None,  # type: ignore[arg-type]
+                ),
+            ]
+        )
 
     # Configure structlog
     structlog.configure(
-        processors=processors,
+        processors=processors,  # type: ignore[arg-type]
         context_class=dict,
         logger_factory=structlog.stdlib.LoggerFactory(),
         cache_logger_on_first_use=True,
@@ -70,7 +72,7 @@ def setup_logging() -> None:
 
 def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     """Get a configured logger instance"""
-    return structlog.get_logger(name)
+    return structlog.get_logger(name)  # type: ignore[no-any-return]
 
 
 # Initialize logging on import

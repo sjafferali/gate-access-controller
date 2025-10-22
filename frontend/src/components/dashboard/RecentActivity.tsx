@@ -33,7 +33,9 @@ export default function RecentActivity({ logs }: RecentActivityProps) {
           <FiActivity className="h-6 w-6 text-gray-400" />
         </div>
         <p className="text-sm font-medium text-gray-700">No recent activity</p>
-        <p className="mt-1 text-xs text-gray-500">Activity will appear here when visitors use access links</p>
+        <p className="mt-1 text-xs text-gray-500">
+          Activity will appear here when visitors use access links
+        </p>
       </div>
     )
   }
@@ -49,8 +51,8 @@ export default function RecentActivity({ logs }: RecentActivityProps) {
             <div className={clsx('rounded-full p-2', config.bgColor)}>
               <Icon className={clsx('h-4 w-4', config.color)} />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-gray-900">
                 {log.link_name || 'Unknown Link'}
               </p>
               <p className="text-xs text-gray-500">
@@ -63,8 +65,8 @@ export default function RecentActivity({ logs }: RecentActivityProps) {
                 log.status === AccessStatus.GRANTED
                   ? 'bg-green-100 text-green-800'
                   : log.status === AccessStatus.DENIED
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-yellow-100 text-yellow-800'
+                    ? 'bg-red-100 text-red-800'
+                    : 'bg-yellow-100 text-yellow-800'
               )}
             >
               {log.status}

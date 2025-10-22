@@ -42,9 +42,7 @@ export default function AccessLogs() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Access Logs</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          View all gate access attempts and their status
-        </p>
+        <p className="mt-1 text-sm text-gray-500">View all gate access attempts and their status</p>
       </div>
 
       <div className="card">
@@ -131,9 +129,7 @@ export default function AccessLogs() {
                         {log.ip_address}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {log.webhook_response_time_ms
-                          ? `${log.webhook_response_time_ms}ms`
-                          : '-'}
+                        {log.webhook_response_time_ms ? `${log.webhook_response_time_ms}ms` : '-'}
                       </td>
                     </tr>
                   ))}
@@ -141,11 +137,7 @@ export default function AccessLogs() {
               </table>
             </div>
 
-            <Pagination
-              currentPage={page}
-              totalPages={data.pages}
-              onPageChange={setPage}
-            />
+            <Pagination currentPage={page} totalPages={data.pages} onPageChange={setPage} />
           </>
         ) : (
           <div className="py-16 text-center">

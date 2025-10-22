@@ -1,13 +1,5 @@
 import { Outlet, NavLink } from 'react-router-dom'
-import {
-  FiHome,
-  FiLink,
-  FiFileText,
-  FiSettings,
-  FiActivity,
-  FiMenu,
-  FiX,
-} from 'react-icons/fi'
+import { FiHome, FiLink, FiFileText, FiSettings, FiActivity, FiMenu, FiX } from 'react-icons/fi'
 import { useState } from 'react'
 import clsx from 'clsx'
 
@@ -45,10 +37,7 @@ export default function Layout() {
               <FiActivity className="h-8 w-8 text-primary-600" />
               <span className="ml-2 text-xl font-bold text-gray-900">Gate Access</span>
             </div>
-            <button
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(false)}
-            >
+            <button className="lg:hidden" onClick={() => setSidebarOpen(false)}>
               <FiX className="h-6 w-6 text-gray-500" />
             </button>
           </div>
@@ -62,9 +51,7 @@ export default function Layout() {
                 className={({ isActive }) =>
                   clsx(
                     'group flex items-center rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-                    isActive
-                      ? 'bg-primary-100 text-primary-900'
-                      : 'text-gray-700 hover:bg-gray-100'
+                    isActive ? 'bg-primary-100 text-primary-900' : 'text-gray-700 hover:bg-gray-100'
                   )
                 }
               >
@@ -89,10 +76,7 @@ export default function Layout() {
         {/* Top header */}
         <header className="bg-white shadow-sm">
           <div className="flex h-16 items-center px-4">
-            <button
-              className="lg:hidden"
-              onClick={() => setSidebarOpen(true)}
-            >
+            <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
               <FiMenu className="h-6 w-6 text-gray-500" />
             </button>
             <h1 className="ml-4 text-lg font-semibold text-gray-900 lg:ml-0">

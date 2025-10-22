@@ -25,7 +25,8 @@ export default function Dashboard() {
   })
 
   // Calculate stats
-  const activeLinks = linksData?.items.filter((link) => link.status === LinkStatus.ACTIVE).length || 0
+  const activeLinks =
+    linksData?.items.filter((link) => link.status === LinkStatus.ACTIVE).length || 0
   const totalLinks = linksData?.total || 0
   const grantedAccess = logsStats?.granted_count || 0
   const deniedAccess = logsStats?.denied_count || 0
@@ -53,9 +54,9 @@ export default function Dashboard() {
       {/* Stats Grid */}
       {isLoadingDashboard ? (
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
+          {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="card animate-pulse">
-              <div className="h-20 bg-gray-200 rounded"></div>
+              <div className="h-20 rounded bg-gray-200"></div>
             </div>
           ))}
         </div>
@@ -101,10 +102,7 @@ export default function Dashboard() {
               <FiActivity className="mr-2 h-5 w-5 text-gray-400" />
               Recent Activity
             </h2>
-            <Link
-              to="/logs"
-              className="text-sm text-primary-600 hover:text-primary-700"
-            >
+            <Link to="/logs" className="text-sm text-primary-600 hover:text-primary-700">
               View all
             </Link>
           </div>
@@ -127,10 +125,7 @@ export default function Dashboard() {
               <FiLink className="mr-2 h-5 w-5 text-gray-400" />
               Active Links
             </h2>
-            <Link
-              to="/links"
-              className="text-sm text-primary-600 hover:text-primary-700"
-            >
+            <Link to="/links" className="text-sm text-primary-600 hover:text-primary-700">
               View all
             </Link>
           </div>

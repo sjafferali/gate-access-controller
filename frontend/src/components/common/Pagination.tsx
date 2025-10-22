@@ -58,15 +58,16 @@ export default function Pagination({ currentPage, totalPages, onPageChange }: Pa
           </p>
         </div>
         <div>
-          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+          <nav
+            className="isolate inline-flex -space-x-px rounded-md shadow-sm"
+            aria-label="Pagination"
+          >
             <button
               onClick={() => onPageChange(currentPage - 1)}
               disabled={currentPage === 1}
               className={clsx(
                 'relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300',
-                currentPage === 1
-                  ? 'cursor-not-allowed bg-gray-50'
-                  : 'bg-white hover:bg-gray-50'
+                currentPage === 1 ? 'cursor-not-allowed bg-gray-50' : 'bg-white hover:bg-gray-50'
               )}
             >
               <span className="sr-only">Previous</span>

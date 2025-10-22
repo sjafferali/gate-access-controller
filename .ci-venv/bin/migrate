@@ -1,0 +1,6 @@
+#!/Users/sjafferali/github/personal/gate-access-controller/.ci-venv/bin/python
+import sys
+from backend.scripts.migrate import main
+
+if __name__ == '__main__':
+    sys.exit(main())

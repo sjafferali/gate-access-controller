@@ -100,13 +100,13 @@ export interface PaginatedResponse<T> {
 export interface MessageResponse {
   message: string
   success: boolean
-  data?: Record<string, any>
+  data?: Record<string, unknown>
 }
 
 export interface ErrorResponse {
   error: string
   message: string
-  details?: Record<string, any>
+  details?: Record<string, unknown>
   status_code: number
 }
 

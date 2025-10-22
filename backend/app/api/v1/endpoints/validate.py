@@ -1,14 +1,13 @@
 """Validation API endpoints for checking and using access links"""
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
-from sqlalchemy.ext.asyncio import AsyncSession
-
 from app.api.v1.schemas import AccessLinkPublic, MessageResponse
 from app.core.logging import logger
 from app.db.base import get_db
 from app.models import AccessLog, AccessStatus, DenialReason
 from app.services.link_service import LinkService
 from app.services.webhook_service import WebhookService
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -60,7 +59,7 @@ async def validate_link(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to validate link",
-        )
+        ) from e
 
 
 @router.post("/{link_code}/access", response_model=MessageResponse)
@@ -113,6 +112,9 @@ async def request_access(
             )
 
         # Link is valid, trigger the webhook
+        # At this point, link must exist (is_valid=True guarantees this)
+        assert link is not None, "Link must exist for valid access"
+
         try:
             response_time = await webhook_service.trigger_gate_open()
             log.webhook_response_time_ms = response_time
@@ -163,7 +165,7 @@ async def request_access(
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Gate control system unavailable",
-            )
+            ) from webhook_error
 
     except HTTPException:
         raise
@@ -192,7 +194,7 @@ async def request_access(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to process access request",
-        )
+        ) from e
 
 
 def _get_denial_reason(message: str) -> DenialReason:

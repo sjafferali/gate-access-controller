@@ -1,14 +1,8 @@
 """Access Logs API endpoints"""
 
 from datetime import datetime, timedelta
-from typing import List, Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import and_, desc, func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas import (
-    AccessLogFilter,
     AccessLogListResponse,
     AccessLogResponse,
     AccessLogStats,
@@ -17,6 +11,9 @@ from app.api.v1.schemas import (
 from app.core.logging import logger
 from app.db.base import get_db
 from app.models import AccessLog, AccessStatus
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, desc, func, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -25,11 +22,11 @@ router = APIRouter()
 async def list_access_logs(
     page: int = Query(1, ge=1),
     size: int = Query(50, ge=1, le=200),
-    link_id: Optional[str] = None,
-    status: Optional[AccessStatus] = None,
-    ip_address: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    link_id: str | None = None,
+    log_status: AccessStatus | None = None,
+    ip_address: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogListResponse:
     """List all access logs with pagination and filtering"""
@@ -41,8 +38,8 @@ async def list_access_logs(
         filters = []
         if link_id:
             filters.append(AccessLog.link_id == link_id)
-        if status:
-            filters.append(AccessLog.status == status)
+        if log_status:
+            filters.append(AccessLog.status == log_status)
         if ip_address:
             filters.append(AccessLog.ip_address == ip_address)
         if start_date:
@@ -82,14 +79,14 @@ async def list_access_logs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list access logs",
-        )
+        ) from e
 
 
 @router.get("/stats", response_model=AccessLogStats)
 async def get_access_log_stats(
-    link_id: Optional[str] = None,
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
+    link_id: str | None = None,
+    start_date: datetime | None = None,
+    end_date: datetime | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogStats:
     """Get statistics for access logs"""
@@ -118,7 +115,7 @@ async def get_access_log_stats(
         granted_count = sum(1 for log in logs if log.status == AccessStatus.GRANTED)
         denied_count = sum(1 for log in logs if log.status == AccessStatus.DENIED)
         error_count = sum(1 for log in logs if log.status == AccessStatus.ERROR)
-        unique_ips = len(set(log.ip_address for log in logs))
+        unique_ips = len({log.ip_address for log in logs})
 
         return AccessLogStats(
             total_attempts=total_attempts,
@@ -135,15 +132,15 @@ async def get_access_log_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get access log statistics",
-        )
+        ) from e
 
 
-@router.get("/summary", response_model=List[AccessLogSummary])
+@router.get("/summary", response_model=list[AccessLogSummary])
 async def get_access_log_summary(
     days: int = Query(7, ge=1, le=90, description="Number of days to include"),
-    link_id: Optional[str] = None,
+    link_id: str | None = None,
     db: AsyncSession = Depends(get_db),
-) -> List[AccessLogSummary]:
+) -> list[AccessLogSummary]:
     """Get daily summary of access logs for the specified period"""
     try:
         # Calculate date range
@@ -177,7 +174,7 @@ async def get_access_log_summary(
             granted = sum(1 for log in logs if log.status == AccessStatus.GRANTED)
             denied = sum(1 for log in logs if log.status == AccessStatus.DENIED)
             errors = sum(1 for log in logs if log.status == AccessStatus.ERROR)
-            unique_visitors = len(set(log.ip_address for log in logs))
+            unique_visitors = len({log.ip_address for log in logs})
 
             summaries.append(
                 AccessLogSummary(
@@ -198,7 +195,7 @@ async def get_access_log_summary(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get access log summary",
-        )
+        ) from e
 
 
 @router.get("/{log_id}", response_model=AccessLogResponse)
@@ -227,7 +224,7 @@ async def get_access_log(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get access log",
-        )
+        ) from e
 
 
 @router.delete("", status_code=status.HTTP_204_NO_CONTENT)
@@ -262,4 +259,4 @@ async def delete_old_logs(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete old logs",
-        )
+        ) from e

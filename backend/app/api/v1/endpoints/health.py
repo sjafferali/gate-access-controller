@@ -1,16 +1,16 @@
 """Health check API endpoints"""
 
 from datetime import datetime
-
-from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, text
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any
 
 from app.api.v1.schemas import HealthResponse
 from app.core.config import settings
 from app.core.logging import logger
 from app.db.base import get_db
 from app.services.webhook_service import WebhookService
+from fastapi import APIRouter, Depends
+from sqlalchemy import func, select, text
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -18,7 +18,7 @@ router = APIRouter()
 @router.get("", response_model=HealthResponse)
 async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
     """Comprehensive health check endpoint"""
-    health_status = {
+    health_status: dict[str, Any] = {
         "status": "healthy",
         "version": settings.APP_VERSION,
         "environment": settings.ENVIRONMENT.value,
@@ -39,16 +39,15 @@ async def health_check(db: AsyncSession = Depends(get_db)) -> HealthResponse:
         logger.error("Database health check failed", error=str(e))
         health_status["status"] = "degraded"
 
-
     return HealthResponse(**health_status)
 
 
 @router.get("/database")
-async def database_health(db: AsyncSession = Depends(get_db)) -> dict:
+async def database_health(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """Check database connectivity and status"""
     try:
         # Test basic connectivity
-        result = await db.execute(text("SELECT 1"))
+        await db.execute(text("SELECT 1"))
 
         # Get table counts
         from app.models import AccessLink, AccessLog
@@ -66,7 +65,7 @@ async def database_health(db: AsyncSession = Depends(get_db)) -> dict:
             "statistics": {
                 "access_links": link_count,
                 "access_logs": log_count,
-            }
+            },
         }
 
     except Exception as e:
@@ -80,7 +79,7 @@ async def database_health(db: AsyncSession = Depends(get_db)) -> dict:
 
 
 @router.get("/webhook")
-async def webhook_health() -> dict:
+async def webhook_health() -> dict[str, Any]:
     """Check webhook connectivity"""
     webhook_service = WebhookService()
 

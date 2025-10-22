@@ -20,7 +20,7 @@ export default function LinksSummary({ links }: LinksSummaryProps) {
   const copyCode = (code: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    navigator.clipboard.writeText(code)
+    void navigator.clipboard.writeText(code)
     toast.success('Access code copied to clipboard')
   }
 
@@ -42,11 +42,11 @@ export default function LinksSummary({ links }: LinksSummaryProps) {
     <div className="space-y-3">
       {activeLinks.slice(0, 5).map((link) => (
         <div key={link.id} className="flex items-center justify-between">
-          <div className="flex-1 min-w-0">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center space-x-2">
               <Link
                 to={`/links/${link.id}`}
-                className="text-sm font-medium text-gray-900 hover:text-primary-600 truncate"
+                className="truncate text-sm font-medium text-gray-900 hover:text-primary-600"
               >
                 {link.name}
               </Link>
@@ -64,7 +64,7 @@ export default function LinksSummary({ links }: LinksSummaryProps) {
                 Code: <code className="mx-1 font-mono">{link.link_code}</code>
                 <button
                   onClick={(e) => copyCode(link.link_code, e)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  className="text-gray-400 transition-colors hover:text-gray-600"
                   title="Copy access code"
                 >
                   <FiCopy className="h-3 w-3" />
@@ -74,14 +74,13 @@ export default function LinksSummary({ links }: LinksSummaryProps) {
                 <span>Expires: {format(new Date(link.expiration), 'MMM d')}</span>
               )}
               {link.max_uses && (
-                <span>Uses: {link.granted_count}/{link.max_uses}</span>
+                <span>
+                  Uses: {link.granted_count}/{link.max_uses}
+                </span>
               )}
             </div>
           </div>
-          <Link
-            to={`/links/${link.id}`}
-            className="ml-2 text-gray-400 hover:text-gray-600"
-          >
+          <Link to={`/links/${link.id}`} className="ml-2 text-gray-400 hover:text-gray-600">
             <FiExternalLink className="h-4 w-4" />
           </Link>
         </div>
@@ -89,10 +88,7 @@ export default function LinksSummary({ links }: LinksSummaryProps) {
 
       {links.length > 5 && (
         <div className="pt-2 text-center">
-          <Link
-            to="/links"
-            className="text-sm text-primary-600 hover:text-primary-700"
-          >
+          <Link to="/links" className="text-sm text-primary-600 hover:text-primary-700">
             View all {links.length} links
           </Link>
         </div>

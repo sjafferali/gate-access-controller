@@ -12,7 +12,7 @@ import {
   FiDatabase,
   FiLink,
   FiBell,
-  FiAlertCircle
+  FiAlertCircle,
 } from 'react-icons/fi'
 import SearchableSelect from '@/components/form/SearchableSelect'
 
@@ -86,7 +86,14 @@ export default function Settings() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeSection, setActiveSection] = useState('general')
 
-  const { register, handleSubmit, control, reset, watch, formState: { errors, isDirty } } = useForm<SettingsData>({
+  const {
+    register,
+    handleSubmit,
+    control,
+    reset,
+    watch,
+    formState: { errors, isDirty },
+  } = useForm<SettingsData>({
     defaultValues: defaultSettings,
   })
 
@@ -98,10 +105,10 @@ export default function Settings() {
     const storedSettings = localStorage.getItem('gateAccessSettings')
     if (storedSettings) {
       try {
-        const parsed = JSON.parse(storedSettings)
+        const parsed = JSON.parse(storedSettings) as Partial<SettingsData>
         reset({ ...defaultSettings, ...parsed })
-      } catch (error) {
-        console.error('Failed to load settings:', error)
+      } catch {
+        console.error('Failed to load settings')
       }
     }
   }, [reset])
@@ -138,7 +145,7 @@ export default function Settings() {
       localStorage.setItem('gateAccessSettings', JSON.stringify(data))
       toast.success('Settings saved successfully')
       reset(data) // Reset form to mark as not dirty
-    } catch (error) {
+    } catch {
       toast.error('Failed to save settings')
     } finally {
       setIsSubmitting(false)
@@ -165,7 +172,7 @@ export default function Settings() {
     <div className="mx-auto max-w-6xl">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-900 flex items-center">
+        <h1 className="flex items-center text-3xl font-bold text-gray-900">
           <FiSettings className="mr-3 text-primary-600" />
           Settings
         </h1>
@@ -182,7 +189,7 @@ export default function Settings() {
               <button
                 key={section.id}
                 onClick={() => setActiveSection(section.id)}
-                className={`w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                className={`flex w-full items-center rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                   activeSection === section.id
                     ? 'bg-primary-100 text-primary-900'
                     : 'text-gray-700 hover:bg-gray-100'
@@ -197,12 +204,17 @@ export default function Settings() {
 
         {/* Settings Form */}
         <div className="flex-1">
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+          <form
+            onSubmit={(e) => {
+              void handleSubmit(onSubmit)(e)
+            }}
+            className="space-y-8"
+          >
             {/* General Settings */}
             {activeSection === 'general' && (
               <div className="card">
-                <div className="border-b border-gray-200 pb-4 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
                     <FiGlobe className="mr-2 text-primary-600" />
                     General Settings
                   </h2>
@@ -213,7 +225,10 @@ export default function Settings() {
 
                 <div className="space-y-5">
                   <div>
-                    <label htmlFor="siteName" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="siteName"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Site Name
                     </label>
                     <input
@@ -228,8 +243,11 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <label htmlFor="timezone" className="block text-sm font-medium text-gray-700 mb-1">
-                      <FiClock className="inline mr-1 text-gray-500" />
+                    <label
+                      htmlFor="timezone"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
+                      <FiClock className="mr-1 inline text-gray-500" />
                       Timezone
                     </label>
                     <Controller
@@ -248,7 +266,10 @@ export default function Settings() {
 
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="dateFormat" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="dateFormat"
+                        className="mb-1 block text-sm font-medium text-gray-700"
+                      >
                         Date Format
                       </label>
                       <Controller
@@ -266,7 +287,10 @@ export default function Settings() {
                     </div>
 
                     <div>
-                      <label htmlFor="timeFormat" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="timeFormat"
+                        className="mb-1 block text-sm font-medium text-gray-700"
+                      >
                         Time Format
                       </label>
                       <Controller
@@ -290,8 +314,8 @@ export default function Settings() {
             {/* Access Link Defaults */}
             {activeSection === 'defaults' && (
               <div className="card">
-                <div className="border-b border-gray-200 pb-4 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
                     <FiLink className="mr-2 text-primary-600" />
                     Access Link Defaults
                   </h2>
@@ -302,14 +326,17 @@ export default function Settings() {
 
                 <div className="space-y-5">
                   <div>
-                    <label htmlFor="defaultExpirationHours" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="defaultExpirationHours"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Default Expiration (hours)
                     </label>
                     <input
                       {...register('defaultExpirationHours', {
                         required: 'Default expiration is required',
                         min: { value: 1, message: 'Must be at least 1 hour' },
-                        valueAsNumber: true
+                        valueAsNumber: true,
                       })}
                       type="number"
                       min="1"
@@ -319,19 +346,24 @@ export default function Settings() {
                       How long links remain valid by default
                     </p>
                     {errors.defaultExpirationHours && (
-                      <p className="mt-1 text-sm text-red-600">{errors.defaultExpirationHours.message}</p>
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.defaultExpirationHours.message}
+                      </p>
                     )}
                   </div>
 
                   <div>
-                    <label htmlFor="defaultMaxUses" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="defaultMaxUses"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Default Maximum Uses
                     </label>
                     <input
                       {...register('defaultMaxUses', {
                         required: 'Default max uses is required',
                         min: { value: 1, message: 'Must be at least 1' },
-                        valueAsNumber: true
+                        valueAsNumber: true,
                       })}
                       type="number"
                       min="1"
@@ -352,27 +384,35 @@ export default function Settings() {
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       />
-                      <label htmlFor="autoDeleteExpiredLinks" className="ml-2 block text-sm text-gray-700">
+                      <label
+                        htmlFor="autoDeleteExpiredLinks"
+                        className="ml-2 block text-sm text-gray-700"
+                      >
                         Automatically delete expired links
                       </label>
                     </div>
 
                     {autoDeleteExpiredLinks && (
                       <div className="ml-6">
-                        <label htmlFor="autoDeleteAfterDays" className="block text-sm font-medium text-gray-700 mb-1">
+                        <label
+                          htmlFor="autoDeleteAfterDays"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
                           Delete after (days)
                         </label>
                         <input
                           {...register('autoDeleteAfterDays', {
                             min: { value: 1, message: 'Must be at least 1 day' },
-                            valueAsNumber: true
+                            valueAsNumber: true,
                           })}
                           type="number"
                           min="1"
                           className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                         />
                         {errors.autoDeleteAfterDays && (
-                          <p className="mt-1 text-sm text-red-600">{errors.autoDeleteAfterDays.message}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.autoDeleteAfterDays.message}
+                          </p>
                         )}
                       </div>
                     )}
@@ -384,8 +424,8 @@ export default function Settings() {
             {/* Security Settings */}
             {activeSection === 'security' && (
               <div className="card">
-                <div className="border-b border-gray-200 pb-4 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
                     <FiShield className="mr-2 text-primary-600" />
                     Security Settings
                   </h2>
@@ -396,13 +436,16 @@ export default function Settings() {
 
                 <div className="space-y-5">
                   <div>
-                    <label htmlFor="webhookUrl" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="webhookUrl"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Webhook URL
                     </label>
                     <input
                       {...register('webhookUrl')}
                       type="url"
-                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                       placeholder="https://your-gate-controller.com/webhook"
                     />
                     <p className="mt-1 text-xs text-gray-500">
@@ -412,14 +455,17 @@ export default function Settings() {
 
                   <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                     <div>
-                      <label htmlFor="webhookTimeout" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="webhookTimeout"
+                        className="mb-1 block text-sm font-medium text-gray-700"
+                      >
                         Webhook Timeout (ms)
                       </label>
                       <input
                         {...register('webhookTimeout', {
                           min: { value: 100, message: 'Must be at least 100ms' },
                           max: { value: 30000, message: 'Cannot exceed 30 seconds' },
-                          valueAsNumber: true
+                          valueAsNumber: true,
                         })}
                         type="number"
                         min="100"
@@ -432,14 +478,17 @@ export default function Settings() {
                     </div>
 
                     <div>
-                      <label htmlFor="webhookRetries" className="block text-sm font-medium text-gray-700 mb-1">
+                      <label
+                        htmlFor="webhookRetries"
+                        className="mb-1 block text-sm font-medium text-gray-700"
+                      >
                         Webhook Retries
                       </label>
                       <input
                         {...register('webhookRetries', {
                           min: { value: 0, message: 'Cannot be negative' },
                           max: { value: 10, message: 'Maximum 10 retries' },
-                          valueAsNumber: true
+                          valueAsNumber: true,
                         })}
                         type="number"
                         min="0"
@@ -453,13 +502,16 @@ export default function Settings() {
                   </div>
 
                   <div>
-                    <label htmlFor="ipWhitelist" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="ipWhitelist"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       IP Whitelist
                     </label>
                     <textarea
                       {...register('ipWhitelist')}
                       rows={4}
-                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                       placeholder="Enter IP addresses or ranges (one per line)&#10;Example:&#10;192.168.1.0/24&#10;10.0.0.1"
                     />
                     <p className="mt-1 text-xs text-gray-500">
@@ -473,7 +525,10 @@ export default function Settings() {
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                     />
-                    <label htmlFor="requireAuthentication" className="ml-2 block text-sm text-gray-700">
+                    <label
+                      htmlFor="requireAuthentication"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
                       Require authentication for admin panel
                     </label>
                   </div>
@@ -484,8 +539,8 @@ export default function Settings() {
             {/* Notification Settings */}
             {activeSection === 'notifications' && (
               <div className="card">
-                <div className="border-b border-gray-200 pb-4 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
                     <FiBell className="mr-2 text-primary-600" />
                     Notification Settings
                   </h2>
@@ -501,7 +556,10 @@ export default function Settings() {
                       type="checkbox"
                       className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                     />
-                    <label htmlFor="emailNotifications" className="ml-2 block text-sm text-gray-700">
+                    <label
+                      htmlFor="emailNotifications"
+                      className="ml-2 block text-sm text-gray-700"
+                    >
                       Enable email notifications
                     </label>
                   </div>
@@ -509,24 +567,31 @@ export default function Settings() {
                   {emailNotifications && (
                     <>
                       <div>
-                        <label htmlFor="notificationEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                          <FiMail className="inline mr-1 text-gray-500" />
+                        <label
+                          htmlFor="notificationEmail"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          <FiMail className="mr-1 inline text-gray-500" />
                           Notification Email Address
                         </label>
                         <input
                           {...register('notificationEmail', {
-                            required: emailNotifications ? 'Email is required when notifications are enabled' : false,
+                            required: emailNotifications
+                              ? 'Email is required when notifications are enabled'
+                              : false,
                             pattern: {
                               value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: 'Invalid email address'
-                            }
+                              message: 'Invalid email address',
+                            },
                           })}
                           type="email"
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm placeholder-gray-400 focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                           placeholder="admin@example.com"
                         />
                         {errors.notificationEmail && (
-                          <p className="mt-1 text-sm text-red-600">{errors.notificationEmail.message}</p>
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.notificationEmail.message}
+                          </p>
                         )}
                       </div>
 
@@ -535,35 +600,44 @@ export default function Settings() {
                           Notify me when:
                         </label>
 
-                        <div className="flex items-center ml-4">
+                        <div className="ml-4 flex items-center">
                           <input
                             {...register('notifyOnNewLink')}
                             type="checkbox"
                             className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                           />
-                          <label htmlFor="notifyOnNewLink" className="ml-2 block text-sm text-gray-700">
+                          <label
+                            htmlFor="notifyOnNewLink"
+                            className="ml-2 block text-sm text-gray-700"
+                          >
                             A new access link is created
                           </label>
                         </div>
 
-                        <div className="flex items-center ml-4">
+                        <div className="ml-4 flex items-center">
                           <input
                             {...register('notifyOnAccess')}
                             type="checkbox"
                             className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                           />
-                          <label htmlFor="notifyOnAccess" className="ml-2 block text-sm text-gray-700">
+                          <label
+                            htmlFor="notifyOnAccess"
+                            className="ml-2 block text-sm text-gray-700"
+                          >
                             Someone successfully uses an access link
                           </label>
                         </div>
 
-                        <div className="flex items-center ml-4">
+                        <div className="ml-4 flex items-center">
                           <input
                             {...register('notifyOnDeniedAccess')}
                             type="checkbox"
                             className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                           />
-                          <label htmlFor="notifyOnDeniedAccess" className="ml-2 block text-sm text-gray-700">
+                          <label
+                            htmlFor="notifyOnDeniedAccess"
+                            className="ml-2 block text-sm text-gray-700"
+                          >
                             Access is denied to someone
                           </label>
                         </div>
@@ -577,8 +651,8 @@ export default function Settings() {
             {/* Data Management Settings */}
             {activeSection === 'data' && (
               <div className="card">
-                <div className="border-b border-gray-200 pb-4 mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 flex items-center">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
                     <FiDatabase className="mr-2 text-primary-600" />
                     Data Management
                   </h2>
@@ -589,7 +663,10 @@ export default function Settings() {
 
                 <div className="space-y-5">
                   <div>
-                    <label htmlFor="logRetentionDays" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="logRetentionDays"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
                       Log Retention Period (days)
                     </label>
                     <input
@@ -597,7 +674,7 @@ export default function Settings() {
                         required: 'Log retention period is required',
                         min: { value: 1, message: 'Must be at least 1 day' },
                         max: { value: 365, message: 'Maximum 365 days' },
-                        valueAsNumber: true
+                        valueAsNumber: true,
                       })}
                       type="number"
                       min="1"
@@ -619,7 +696,10 @@ export default function Settings() {
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       />
-                      <label htmlFor="enableDetailedLogging" className="ml-2 block text-sm text-gray-700">
+                      <label
+                        htmlFor="enableDetailedLogging"
+                        className="ml-2 block text-sm text-gray-700"
+                      >
                         Enable detailed logging (includes user agent, response times)
                       </label>
                     </div>
@@ -630,7 +710,10 @@ export default function Settings() {
                         type="checkbox"
                         className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
                       />
-                      <label htmlFor="enableGeoLocation" className="ml-2 block text-sm text-gray-700">
+                      <label
+                        htmlFor="enableGeoLocation"
+                        className="ml-2 block text-sm text-gray-700"
+                      >
                         Enable geolocation tracking for access attempts
                       </label>
                     </div>
@@ -640,19 +723,17 @@ export default function Settings() {
             )}
 
             {/* Notice about localStorage */}
-            <div className="rounded-md bg-yellow-50 p-4 border border-yellow-200">
+            <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <FiAlertCircle className="h-5 w-5 text-yellow-400" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">
-                    Settings Storage
-                  </h3>
+                  <h3 className="text-sm font-medium text-yellow-800">Settings Storage</h3>
                   <div className="mt-2 text-sm text-yellow-700">
                     <p>
-                      Settings are currently stored locally in your browser.
-                      They will persist across sessions but are not synced to the server.
+                      Settings are currently stored locally in your browser. They will persist
+                      across sessions but are not synced to the server.
                     </p>
                   </div>
                 </div>
@@ -664,7 +745,7 @@ export default function Settings() {
               <button
                 type="button"
                 onClick={handleReset}
-                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors"
+                className="inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
               >
                 <FiRefreshCw className="mr-2 h-4 w-4" />
                 Reset to Defaults
@@ -673,7 +754,7 @@ export default function Settings() {
               <button
                 type="submit"
                 disabled={isSubmitting || !isDirty}
-                className="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 transition-colors"
+                className="inline-flex items-center justify-center rounded-md border border-transparent bg-primary-600 px-5 py-2.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <FiSave className="mr-2 h-4 w-4" />
                 {isSubmitting ? 'Saving...' : 'Save Settings'}

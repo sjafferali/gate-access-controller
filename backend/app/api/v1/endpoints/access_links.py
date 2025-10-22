@@ -1,11 +1,6 @@
 """Access Links API endpoints"""
 
 from datetime import datetime
-from typing import Optional
-
-from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy import and_, desc, func, or_, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.v1.schemas import (
     AccessLinkCreate,
@@ -19,6 +14,9 @@ from app.core.logging import logger
 from app.db.base import get_db
 from app.models import AccessLink, LinkStatus
 from app.services.link_service import LinkService
+from fastapi import APIRouter, Depends, HTTPException, Query, status
+from sqlalchemy import and_, desc, func, or_, select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -27,9 +25,9 @@ router = APIRouter()
 async def list_access_links(
     page: int = Query(1, ge=1),
     size: int = Query(50, ge=1, le=200),
-    status: Optional[LinkStatus] = None,
-    purpose: Optional[str] = None,
-    search: Optional[str] = None,
+    link_status: LinkStatus | None = None,
+    purpose: str | None = None,
+    search: str | None = None,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkListResponse:
     """List all access links with pagination and filtering"""
@@ -39,8 +37,8 @@ async def list_access_links(
 
         # Apply filters
         filters = []
-        if status:
-            filters.append(AccessLink.status == status)
+        if link_status:
+            filters.append(AccessLink.status == link_status)
         if purpose:
             filters.append(AccessLink.purpose == purpose)
         if search:
@@ -84,7 +82,7 @@ async def list_access_links(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to list access links",
-        )
+        ) from e
 
 
 @router.post("", response_model=AccessLinkResponse, status_code=status.HTTP_201_CREATED)
@@ -111,13 +109,13 @@ async def create_access_link(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except Exception as e:
         logger.error("Error creating access link", error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to create access link",
-        )
+        ) from e
 
 
 @router.get("/{link_id}", response_model=AccessLinkResponse)
@@ -146,7 +144,7 @@ async def get_access_link(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get access link",
-        )
+        ) from e
 
 
 @router.patch("/{link_id}", response_model=AccessLinkResponse)
@@ -191,7 +189,7 @@ async def update_access_link(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to update access link",
-        )
+        ) from e
 
 
 @router.delete("/{link_id}", response_model=MessageResponse)
@@ -245,7 +243,7 @@ async def delete_access_link(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to delete access link",
-        )
+        ) from e
 
 
 @router.get("/{link_id}/stats", response_model=AccessLinkStats)
@@ -290,7 +288,7 @@ async def get_link_stats(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to get link statistics",
-        )
+        ) from e
 
 
 @router.post("/{link_id}/regenerate", response_model=AccessLinkResponse)
@@ -312,10 +310,10 @@ async def regenerate_link_code(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from e
     except Exception as e:
         logger.error("Error regenerating link code", link_id=link_id, error=str(e))
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to regenerate link code",
-        )
+        ) from e

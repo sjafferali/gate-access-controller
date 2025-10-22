@@ -2,10 +2,9 @@
 
 from datetime import datetime
 from enum import Enum as PyEnum
-from typing import Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
-    Column,
     DateTime,
     Enum,
     ForeignKey,
@@ -50,7 +49,7 @@ class AccessLog(Base, BaseModelMixin):
     __tablename__ = "access_logs"
 
     # Link reference
-    link_id: Mapped[Optional[str]] = mapped_column(
+    link_id: Mapped[str | None] = mapped_column(
         String(36),
         ForeignKey("access_links.id", ondelete="SET NULL"),
         nullable=True,
@@ -73,50 +72,50 @@ class AccessLog(Base, BaseModelMixin):
         index=True,
         comment="IP address of the requester",
     )
-    user_agent: Mapped[Optional[str]] = mapped_column(
+    user_agent: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="User agent string from the request",
     )
 
     # Additional context
-    denial_reason: Mapped[Optional[DenialReason]] = mapped_column(
+    denial_reason: Mapped[DenialReason | None] = mapped_column(
         Enum(DenialReason),
         nullable=True,
         comment="Reason for denial if access was denied",
     )
-    error_message: Mapped[Optional[str]] = mapped_column(
+    error_message: Mapped[str | None] = mapped_column(
         Text,
         nullable=True,
         comment="Error message if an error occurred",
     )
 
     # Link code at time of access (in case link is deleted)
-    link_code_used: Mapped[Optional[str]] = mapped_column(
+    link_code_used: Mapped[str | None] = mapped_column(
         String(50),
         nullable=True,
         comment="The link code that was attempted",
     )
 
     # Response times
-    webhook_response_time_ms: Mapped[Optional[int]] = mapped_column(
+    webhook_response_time_ms: Mapped[int | None] = mapped_column(
         Integer,
         nullable=True,
         comment="Time taken for webhook response in milliseconds",
     )
 
     # Geographic information (optional, can be added later)
-    country: Mapped[Optional[str]] = mapped_column(
+    country: Mapped[str | None] = mapped_column(
         String(2),  # ISO country code
         nullable=True,
         comment="Country code from IP geolocation",
     )
-    region: Mapped[Optional[str]] = mapped_column(
+    region: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         comment="Region/state from IP geolocation",
     )
-    city: Mapped[Optional[str]] = mapped_column(
+    city: Mapped[str | None] = mapped_column(
         String(100),
         nullable=True,
         comment="City from IP geolocation",
@@ -144,7 +143,7 @@ class AccessLog(Base, BaseModelMixin):
         return self.status == AccessStatus.GRANTED
 
     @property
-    def link_name(self) -> Optional[str]:
+    def link_name(self) -> str | None:
         """Get the name of the associated link if it exists"""
         return self.link.name if self.link else None
 

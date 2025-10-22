@@ -1,6 +1,6 @@
 """Common schemas used across API endpoints"""
 
-from typing import Any, Dict, Optional
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -10,7 +10,7 @@ class MessageResponse(BaseModel):
 
     message: str
     success: bool = True
-    data: Optional[Dict[str, Any]] = None
+    data: dict[str, Any] | None = None
 
 
 class ErrorResponse(BaseModel):
@@ -18,7 +18,7 @@ class ErrorResponse(BaseModel):
 
     error: str
     message: str
-    details: Optional[Dict[str, Any]] = None
+    details: dict[str, Any] | None = None
     status_code: int
 
 
@@ -37,5 +37,5 @@ class PaginationParams(BaseModel):
 
     page: int = Field(1, ge=1, description="Page number")
     size: int = Field(50, ge=1, le=200, description="Page size")
-    sort_by: Optional[str] = Field(None, description="Field to sort by")
+    sort_by: str | None = Field(None, description="Field to sort by")
     sort_order: str = Field("desc", pattern="^(asc|desc)$", description="Sort order")

@@ -24,9 +24,7 @@ export default function StatsCard({ title, value, icon: Icon, color, subtitle }:
         <div>
           <p className="text-sm font-medium text-gray-600">{title}</p>
           <p className="mt-2 text-3xl font-bold text-gray-900">{value}</p>
-          {subtitle && (
-            <p className="mt-1 text-xs text-gray-500">{subtitle}</p>
-          )}
+          {subtitle && <p className="mt-1 text-xs text-gray-500">{subtitle}</p>}
         </div>
         <div className={clsx('rounded-lg p-3', colorMap[color], 'bg-opacity-10')}>
           <Icon className={clsx('h-6 w-6', `text-${color}-600`)} />

@@ -1,7 +1,6 @@
 """Service for managing access links"""
 
-from datetime import datetime, timedelta, timezone
-from typing import Optional
+from datetime import UTC, datetime, timedelta
 
 from nanoid import generate
 from sqlalchemy import select
@@ -26,7 +25,7 @@ class LinkService:
 
         # Set default expiration if not provided
         if not link_data.expiration:
-            link_data.expiration = datetime.now(timezone.utc) + timedelta(
+            link_data.expiration = datetime.now(UTC) + timedelta(
                 hours=settings.DEFAULT_LINK_EXPIRATION_HOURS
             )
 
@@ -55,7 +54,7 @@ class LinkService:
         alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 
         for attempt in range(max_attempts):
-            code = generate(alphabet, settings.LINK_CODE_LENGTH)
+            code: str = generate(alphabet, settings.LINK_CODE_LENGTH)
 
             # Check if code already exists
             query = select(AccessLink).filter(AccessLink.link_code == code)
@@ -73,13 +72,13 @@ class LinkService:
 
         raise ValueError(f"Failed to generate unique code after {max_attempts} attempts")
 
-    async def get_link_by_code(self, link_code: str) -> Optional[AccessLink]:
+    async def get_link_by_code(self, link_code: str) -> AccessLink | None:
         """Get an access link by its code"""
         query = select(AccessLink).filter(AccessLink.link_code == link_code)
         result = await self.db.execute(query)
         return result.scalar_one_or_none()
 
-    async def validate_link(self, link_code: str) -> tuple[bool, str, Optional[AccessLink]]:
+    async def validate_link(self, link_code: str) -> tuple[bool, str, AccessLink | None]:
         """
         Validate if a link code can grant access.
 

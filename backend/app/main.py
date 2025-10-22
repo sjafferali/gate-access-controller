@@ -1,15 +1,16 @@
 """Main FastAPI application"""
 
+from collections.abc import AsyncGenerator
 from contextlib import asynccontextmanager
-from typing import AsyncGenerator
+from typing import Any
 
+import sentry_sdk
 from fastapi import FastAPI, Request, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 from fastapi.responses import JSONResponse
 from sentry_sdk.integrations.fastapi import FastApiIntegration
 from sentry_sdk.integrations.starlette import StarletteIntegration
-import sentry_sdk
 
 from app.api.v1.api import api_router
 from app.core.config import settings
@@ -18,7 +19,7 @@ from app.db.base import async_engine
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI) -> AsyncGenerator:
+async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan events"""
     # Startup
     logger.info("Starting Gate Access Controller API", version=settings.APP_VERSION)
@@ -105,7 +106,7 @@ app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 
 # Root endpoint
 @app.get("/", include_in_schema=False)
-async def root() -> dict:
+async def root() -> dict[str, Any]:
     """Root endpoint"""
     return {
         "name": settings.PROJECT_NAME,
@@ -117,7 +118,7 @@ async def root() -> dict:
 
 # Health check endpoint
 @app.get("/health", include_in_schema=False)
-async def health_check() -> dict:
+async def health_check() -> dict[str, Any]:
     """Health check endpoint"""
     return {
         "status": "healthy",

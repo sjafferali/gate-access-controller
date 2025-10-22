@@ -33,7 +33,7 @@ export default function LinksList({ links }: LinksListProps) {
 
   const copyLinkUrl = (linkCode: string) => {
     const url = `${window.location.origin}/access/${linkCode}`
-    navigator.clipboard.writeText(url)
+    void navigator.clipboard.writeText(url)
     toast.success('Link URL copied to clipboard')
   }
 
@@ -42,7 +42,7 @@ export default function LinksList({ links }: LinksListProps) {
     onSuccess: () => {
       toast.success('Access link deleted successfully')
       // Invalidate the links query to refresh the list
-      queryClient.invalidateQueries({ queryKey: ['links'] })
+      void queryClient.invalidateQueries({ queryKey: ['links'] })
       setDeleteModal({ isOpen: false, link: null })
       setIsDeleting(false)
     },
@@ -76,8 +76,8 @@ export default function LinksList({ links }: LinksListProps) {
         {links.map((link) => (
           <div key={link.id} className="rounded-lg bg-white p-4 shadow">
             <div className="mb-3 flex items-start justify-between">
-              <div className="flex-1 min-w-0">
-                <h3 className="text-base font-semibold text-gray-900 truncate">{link.name}</h3>
+              <div className="min-w-0 flex-1">
+                <h3 className="truncate text-base font-semibold text-gray-900">{link.name}</h3>
                 <p className="mt-1 text-sm text-gray-500">{link.purpose}</p>
               </div>
               <span
@@ -97,7 +97,7 @@ export default function LinksList({ links }: LinksListProps) {
                   <code className="font-mono text-gray-900">{link.link_code}</code>
                   <button
                     onClick={() => copyLinkUrl(link.link_code)}
-                    className="text-gray-400 hover:text-gray-600 p-1"
+                    className="p-1 text-gray-400 hover:text-gray-600"
                   >
                     <FiCopy className="h-4 w-4" />
                   </button>
@@ -106,7 +106,9 @@ export default function LinksList({ links }: LinksListProps) {
               <div className="flex items-center justify-between">
                 <span className="text-gray-500">Usage:</span>
                 <span className="text-gray-900">
-                  {link.max_uses ? `${link.granted_count}/${link.max_uses}` : `${link.granted_count} uses`}
+                  {link.max_uses
+                    ? `${link.granted_count}/${link.max_uses}`
+                    : `${link.granted_count} uses`}
                 </span>
               </div>
               <div className="flex items-center justify-between">
@@ -120,21 +122,21 @@ export default function LinksList({ links }: LinksListProps) {
             <div className="flex items-center justify-end space-x-3 border-t border-gray-200 pt-3">
               <Link
                 to={`/links/${link.id}`}
-                className="inline-flex items-center text-sm text-primary-600 hover:text-primary-900 font-medium"
+                className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-900"
               >
                 <FiEye className="mr-1 h-4 w-4" />
                 View
               </Link>
               <Link
                 to={`/links/${link.id}/edit`}
-                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-900 font-medium"
+                className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-900"
               >
                 <FiEdit className="mr-1 h-4 w-4" />
                 Edit
               </Link>
               <button
                 onClick={() => handleDeleteClick(link)}
-                className="inline-flex items-center text-sm text-red-600 hover:text-red-900 font-medium"
+                className="inline-flex items-center text-sm font-medium text-red-600 hover:text-red-900"
               >
                 <FiTrash2 className="mr-1 h-4 w-4" />
                 Delete
@@ -145,7 +147,7 @@ export default function LinksList({ links }: LinksListProps) {
       </div>
 
       {/* Desktop Table View */}
-      <div className="hidden md:block overflow-hidden rounded-lg bg-white shadow">
+      <div className="hidden overflow-hidden rounded-lg bg-white shadow md:block">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
@@ -180,10 +182,10 @@ export default function LinksList({ links }: LinksListProps) {
                 </td>
                 <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex items-center space-x-2">
-                    <code className="text-sm font-mono text-gray-900">{link.link_code}</code>
+                    <code className="font-mono text-sm text-gray-900">{link.link_code}</code>
                     <button
                       onClick={() => copyLinkUrl(link.link_code)}
-                      className="text-gray-400 hover:text-gray-600 p-1"
+                      className="p-1 text-gray-400 hover:text-gray-600"
                     >
                       <FiCopy className="h-4 w-4" />
                     </button>
@@ -201,7 +203,9 @@ export default function LinksList({ links }: LinksListProps) {
                 </td>
                 <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                   {link.max_uses ? (
-                    <span>{link.granted_count}/{link.max_uses}</span>
+                    <span>
+                      {link.granted_count}/{link.max_uses}
+                    </span>
                   ) : (
                     <span>{link.granted_count} uses</span>
                   )}
@@ -213,19 +217,19 @@ export default function LinksList({ links }: LinksListProps) {
                   <div className="flex items-center justify-end space-x-3">
                     <Link
                       to={`/links/${link.id}`}
-                      className="text-primary-600 hover:text-primary-900 p-1"
+                      className="p-1 text-primary-600 hover:text-primary-900"
                     >
                       <FiEye className="h-5 w-5" />
                     </Link>
                     <Link
                       to={`/links/${link.id}/edit`}
-                      className="text-blue-600 hover:text-blue-900 p-1"
+                      className="p-1 text-blue-600 hover:text-blue-900"
                     >
                       <FiEdit className="h-5 w-5" />
                     </Link>
                     <button
                       onClick={() => handleDeleteClick(link)}
-                      className="text-red-600 hover:text-red-900 p-1"
+                      className="p-1 text-red-600 hover:text-red-900"
                     >
                       <FiTrash2 className="h-5 w-5" />
                     </button>

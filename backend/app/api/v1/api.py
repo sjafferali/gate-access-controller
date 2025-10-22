@@ -1,8 +1,7 @@
 """Main API router for v1 endpoints"""
 
-from fastapi import APIRouter
-
 from app.api.v1.endpoints import access_links, access_logs, health, validate
+from fastapi import APIRouter
 
 api_router = APIRouter()
 

@@ -1,13 +1,11 @@
 """Base model mixins for database models"""
 
-from datetime import datetime, timezone
-from typing import Any, Dict
-
-from sqlalchemy import Column, DateTime, String, func
-from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.ext.declarative import declared_attr
-from sqlalchemy.orm import Mapped, mapped_column
 import uuid
+from datetime import datetime
+from typing import Any
+
+from sqlalchemy import DateTime, String, func
+from sqlalchemy.orm import Mapped, mapped_column
 
 
 class TimestampMixin:
@@ -40,10 +38,10 @@ class UUIDMixin:
 class BaseModelMixin(UUIDMixin, TimestampMixin):
     """Base mixin combining UUID and timestamp features"""
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert model instance to dictionary"""
         result = {}
-        for column in self.__table__.columns:
+        for column in self.__table__.columns:  # type: ignore[attr-defined]
             value = getattr(self, column.name)
             if isinstance(value, datetime):
                 result[column.name] = value.isoformat()

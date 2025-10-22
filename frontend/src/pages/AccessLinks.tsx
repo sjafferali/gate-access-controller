@@ -38,9 +38,7 @@ export default function AccessLinks() {
       <div className="flex flex-col space-y-4 sm:flex-row sm:items-center sm:justify-between sm:space-y-0">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Access Links</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            Manage temporary access links for your gate
-          </p>
+          <p className="mt-1 text-sm text-gray-500">Manage temporary access links for your gate</p>
         </div>
         <Link
           to="/links/new"
@@ -101,11 +99,7 @@ export default function AccessLinks() {
       ) : data && data.items.length > 0 ? (
         <>
           <LinksList links={data.items} />
-          <Pagination
-            currentPage={page}
-            totalPages={data.pages}
-            onPageChange={setPage}
-          />
+          <Pagination currentPage={page} totalPages={data.pages} onPageChange={setPage} />
         </>
       ) : (
         <div className="card py-16 text-center">

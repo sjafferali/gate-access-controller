@@ -1,7 +1,6 @@
 """Service for handling webhook calls to the gate controller"""
 
 import time
-from typing import Optional
 
 import httpx
 from tenacity import retry, stop_after_attempt, wait_exponential
@@ -13,7 +12,7 @@ from app.core.logging import logger
 class WebhookService:
     """Service for triggering gate control webhooks"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.webhook_url = settings.GATE_WEBHOOK_URL
         self.webhook_token = settings.GATE_WEBHOOK_TOKEN
         self.timeout = settings.GATE_WEBHOOK_TIMEOUT
@@ -79,7 +78,7 @@ class WebhookService:
                 timeout_seconds=self.timeout,
                 response_time_ms=response_time_ms,
             )
-            raise Exception("Gate control system timeout")
+            raise Exception("Gate control system timeout") from e
 
         except httpx.RequestError as e:
             response_time_ms = int((time.time() - start_time) * 1000)
@@ -88,7 +87,7 @@ class WebhookService:
                 error=str(e),
                 response_time_ms=response_time_ms,
             )
-            raise Exception("Failed to connect to gate control system")
+            raise Exception("Failed to connect to gate control system") from e
 
         except Exception as e:
             response_time_ms = int((time.time() - start_time) * 1000)
@@ -99,7 +98,7 @@ class WebhookService:
             )
             raise
 
-    async def test_webhook(self) -> tuple[bool, str, Optional[int]]:
+    async def test_webhook(self) -> tuple[bool, str, int | None]:
         """
         Test the gate webhook connection.
 

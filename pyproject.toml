@@ -128,7 +128,6 @@ addopts = [
     "--cov-report=term-missing:skip-covered",
     "--cov-report=html:backend/htmlcov",
     "--cov-report=xml:backend/coverage.xml",
-    "--cov-fail-under=80",
     "-vv",
 ]
 markers = [

@@ -13,13 +13,22 @@ export default function EditLink() {
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   // Fetch existing link data
-  const { data: link, isLoading, error } = useQuery({
+  const {
+    data: link,
+    isLoading,
+    error,
+  } = useQuery({
     queryKey: ['link', linkId],
     queryFn: () => accessLinksApi.get(linkId!),
     enabled: !!linkId,
   })
 
-  const { register, handleSubmit, reset, formState: { errors } } = useForm<UpdateAccessLink>()
+  const {
+    register,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<UpdateAccessLink>()
 
   // Populate form when link data is loaded
   useEffect(() => {
@@ -48,7 +57,7 @@ export default function EditLink() {
     mutationFn: (data: UpdateAccessLink) => accessLinksApi.update(linkId!, data),
     onSuccess: (data) => {
       toast.success('Access link updated successfully')
-      navigate(`/links/${data.id}`)
+      void navigate(`/links/${data.id}`)
     },
     onError: () => {
       toast.error('Failed to update access link')
@@ -58,7 +67,7 @@ export default function EditLink() {
 
   const copyCode = () => {
     if (link?.link_code) {
-      navigator.clipboard.writeText(link.link_code)
+      void navigator.clipboard.writeText(link.link_code)
       toast.success('Access code copied to clipboard')
     }
   }
@@ -107,7 +116,7 @@ export default function EditLink() {
   if (isLoading) {
     return (
       <div className="mx-auto max-w-2xl">
-        <div className="flex justify-center items-center h-64">
+        <div className="flex h-64 items-center justify-center">
           <div className="text-gray-500">Loading link details...</div>
         </div>
       </div>
@@ -117,7 +126,7 @@ export default function EditLink() {
   if (error || !link) {
     return (
       <div className="mx-auto max-w-2xl">
-        <div className="bg-red-50 border border-red-200 rounded-md p-4">
+        <div className="rounded-md border border-red-200 bg-red-50 p-4">
           <p className="text-red-800">Failed to load link details</p>
         </div>
       </div>
@@ -128,12 +137,15 @@ export default function EditLink() {
     <div className="mx-auto max-w-2xl">
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-gray-900">Edit Access Link</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Update the details of your access link
-        </p>
+        <p className="mt-1 text-sm text-gray-500">Update the details of your access link</p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="card space-y-6">
+      <form
+        onSubmit={(e) => {
+          void handleSubmit(onSubmit)(e)
+        }}
+        className="card space-y-6"
+      >
         <div>
           <label htmlFor="name" className="block text-sm font-medium text-gray-700">
             Name *
@@ -143,26 +155,27 @@ export default function EditLink() {
               required: 'Link name is required',
               minLength: {
                 value: 3,
-                message: 'Link name must be at least 3 characters long'
+                message: 'Link name must be at least 3 characters long',
               },
               maxLength: {
                 value: 100,
-                message: 'Link name cannot exceed 100 characters'
+                message: 'Link name cannot exceed 100 characters',
               },
               pattern: {
                 value: /^[a-zA-Z0-9\s\-.,&]+$/,
-                message: 'Link name can only contain letters, numbers, spaces, and basic punctuation (- . , &)'
-              }
+                message:
+                  'Link name can only contain letters, numbers, spaces, and basic punctuation (- . , &)',
+              },
             })}
             type="text"
             className={`mt-1 block w-full rounded-md ${
-              errors.name ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+              errors.name
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
             } shadow-sm sm:text-sm`}
             placeholder="Delivery - Amazon Package"
           />
-          {errors.name && (
-            <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
-          )}
+          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
         </div>
 
         <div>
@@ -205,18 +218,18 @@ export default function EditLink() {
             {...register('notes', {
               maxLength: {
                 value: 500,
-                message: 'Notes cannot exceed 500 characters'
-              }
+                message: 'Notes cannot exceed 500 characters',
+              },
             })}
             rows={3}
             className={`mt-1 block w-full rounded-md ${
-              errors.notes ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+              errors.notes
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
             } shadow-sm sm:text-sm`}
             placeholder="Additional instructions or details..."
           />
-          {errors.notes && (
-            <p className="mt-1 text-sm text-red-600">{errors.notes.message}</p>
-          )}
+          {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes.message}</p>}
           <p className="mt-1 text-xs text-gray-500">Optional - Maximum 500 characters</p>
         </div>
 
@@ -228,19 +241,21 @@ export default function EditLink() {
             <input
               {...register('active_on', {
                 validate: (value) => {
-                  if (!value) return true; // Optional field
-                  const activeDate = new Date(value);
-                  const now = new Date();
-                  now.setMinutes(now.getMinutes() - 5); // Allow 5 minutes in the past for editing
+                  if (!value) return true // Optional field
+                  const activeDate = new Date(value)
+                  const now = new Date()
+                  now.setMinutes(now.getMinutes() - 5) // Allow 5 minutes in the past for editing
                   if (activeDate < now && value !== link?.active_on) {
-                    return 'Active date cannot be in the past';
+                    return 'Active date cannot be in the past'
                   }
-                  return true;
-                }
+                  return true
+                },
               })}
               type="datetime-local"
               className={`mt-1 block w-full rounded-md ${
-                errors.active_on ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                errors.active_on
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
               } shadow-sm sm:text-sm`}
             />
             {errors.active_on && (
@@ -255,24 +270,26 @@ export default function EditLink() {
             <input
               {...register('expiration', {
                 validate: (value, formValues) => {
-                  if (!value) return true; // Optional field
-                  const expirationDate = new Date(value);
-                  const now = new Date();
+                  if (!value) return true // Optional field
+                  const expirationDate = new Date(value)
+                  const now = new Date()
                   if (expirationDate <= now && value !== link?.expiration) {
-                    return 'Expiration date must be in the future';
+                    return 'Expiration date must be in the future'
                   }
                   if (formValues.active_on) {
-                    const activeDate = new Date(formValues.active_on);
+                    const activeDate = new Date(formValues.active_on)
                     if (expirationDate <= activeDate) {
-                      return 'Expiration date must be after the active date';
+                      return 'Expiration date must be after the active date'
                     }
                   }
-                  return true;
-                }
+                  return true
+                },
               })}
               type="datetime-local"
               className={`mt-1 block w-full rounded-md ${
-                errors.expiration ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                errors.expiration
+                  ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                  : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
               } shadow-sm sm:text-sm`}
             />
             {errors.expiration && (
@@ -290,24 +307,26 @@ export default function EditLink() {
               valueAsNumber: true,
               min: {
                 value: 1,
-                message: 'Maximum uses must be at least 1'
+                message: 'Maximum uses must be at least 1',
               },
               max: {
                 value: 1000,
-                message: 'Maximum uses cannot exceed 1000'
+                message: 'Maximum uses cannot exceed 1000',
               },
               validate: (value) => {
                 if (value && (!Number.isInteger(value) || value < 0)) {
-                  return 'Please enter a valid positive number';
+                  return 'Please enter a valid positive number'
                 }
-                return true;
-              }
+                return true
+              },
             })}
             type="number"
             min="1"
             max="1000"
             className={`mt-1 block w-full rounded-md ${
-              errors.max_uses ? 'border-red-300 focus:border-red-500 focus:ring-red-500' : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+              errors.max_uses
+                ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
             } shadow-sm sm:text-sm`}
             placeholder="Leave empty for unlimited"
           />
@@ -320,33 +339,35 @@ export default function EditLink() {
           )}
         </div>
 
-        <div className="bg-gray-50 rounded-md p-4">
+        <div className="rounded-md bg-gray-50 p-4">
           <div className="text-sm text-gray-600">
-            <p className="font-medium mb-2">Link Information:</p>
+            <p className="mb-2 font-medium">Link Information:</p>
             <p className="flex items-center">
               Access Code:
-              <code className="bg-gray-200 px-2 py-1 rounded mx-2">{link.link_code}</code>
+              <code className="mx-2 rounded bg-gray-200 px-2 py-1">{link.link_code}</code>
               <button
                 type="button"
                 onClick={copyCode}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="text-gray-400 transition-colors hover:text-gray-600"
                 title="Copy access code"
               >
                 <FiCopy className="h-4 w-4" />
               </button>
             </p>
-            <p>Usage: {link.granted_count}/{link.max_uses || '∞'}</p>
+            <p>
+              Usage: {link.granted_count}/{link.max_uses || '∞'}
+            </p>
             <p>Created: {new Date(link.created_at).toLocaleString()}</p>
-            {link.updated_at && (
-              <p>Last Updated: {new Date(link.updated_at).toLocaleString()}</p>
-            )}
+            {link.updated_at && <p>Last Updated: {new Date(link.updated_at).toLocaleString()}</p>}
           </div>
         </div>
 
         <div className="flex justify-end space-x-3">
           <button
             type="button"
-            onClick={() => navigate('/links')}
+            onClick={() => {
+              void navigate('/links')
+            }}
             className="rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
           >
             Cancel
