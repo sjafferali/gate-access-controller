@@ -100,23 +100,28 @@ export default function AccessPortal() {
             </div>
           </div>
 
-          <h1 className="mb-4 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
-            Gate Access Request
+          <h1 className="mb-6 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
+            Gate Access
           </h1>
 
-          <div className="mb-6 rounded-lg bg-gray-50 p-4">
-            <h2 className="mb-2 text-base font-semibold text-gray-900 sm:text-lg">{data.name}</h2>
-            {data.notes && <p className="text-sm text-gray-600 sm:text-base">{data.notes}</p>}
-            <div className="mt-3">
-              <span
-                className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
-                  data.is_valid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}
-              >
-                {formattedMessage}
-              </span>
+          {!data.auto_open && (
+            <div className="mb-6 text-center">
+              <p className="mb-4 text-base text-gray-700 sm:text-lg">
+                {data.is_valid
+                  ? "Click the button below to open the gate."
+                  : "This access link cannot be used at this time."}
+              </p>
+              <div>
+                <span
+                  className={`inline-flex rounded-full px-3 py-1 text-sm font-medium ${
+                    data.is_valid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}
+                >
+                  {formattedMessage}
+                </span>
+              </div>
             </div>
-          </div>
+          )}
 
           {data.is_valid ? (
             data.auto_open ? (
