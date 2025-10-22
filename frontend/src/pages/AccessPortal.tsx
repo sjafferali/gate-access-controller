@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { FiLock, FiUnlock, FiAlertCircle } from 'react-icons/fi'
@@ -6,6 +6,7 @@ import toast from 'react-hot-toast'
 import { AxiosError } from 'axios'
 import { validationApi } from '@/services/api'
 import { type ErrorResponse } from '@/types'
+import { formatDateTimeInUserTimezone } from '@/utils/format'
 
 export default function AccessPortal() {
   const { linkCode } = useParams<{ linkCode: string }>()
@@ -35,6 +36,24 @@ export default function AccessPortal() {
     setIsRequesting(true)
     accessMutation.mutate()
   }
+
+  // Format the message to use user's timezone for timestamps
+  const formattedMessage = useMemo(() => {
+    if (!data) return ''
+
+    // If we have active_on timestamp and the message mentions it, format it
+    if (data.active_on && data.message.includes('not active until')) {
+      return `Link not active until ${formatDateTimeInUserTimezone(data.active_on)}`
+    }
+
+    // If we have expiration timestamp and the message mentions it, format it
+    if (data.expiration && data.message.includes('expired')) {
+      return `Link expired on ${formatDateTimeInUserTimezone(data.expiration)}`
+    }
+
+    // Otherwise, return the message as-is
+    return data.message
+  }, [data])
 
   if (isLoading) {
     return (
@@ -94,7 +113,7 @@ export default function AccessPortal() {
                   data.is_valid ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                 }`}
               >
-                {data.message}
+                {formattedMessage}
               </span>
             </div>
           </div>
@@ -124,7 +143,7 @@ export default function AccessPortal() {
           ) : (
             <div className="rounded-md bg-red-50 p-4">
               <p className="text-sm text-red-800 sm:text-base">
-                This link cannot grant access at this time. {data.message}
+                This link cannot grant access at this time. {formattedMessage}
               </p>
             </div>
           )}

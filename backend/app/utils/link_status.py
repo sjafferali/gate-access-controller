@@ -71,7 +71,8 @@ def calculate_link_status(link: AccessLink) -> LinkStatus:
             return LinkStatus.INACTIVE
 
     # Priority 5: Check if maximum uses have been exceeded
-    if link.max_uses is not None and link.granted_count >= link.max_uses:
+    # Note: granted_count should always be set, but we check defensively
+    if link.max_uses is not None and (link.granted_count or 0) >= link.max_uses:
         return LinkStatus.INACTIVE
 
     # If none of the inactive conditions are met, link should be ACTIVE

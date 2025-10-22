@@ -36,6 +36,8 @@ class LinkService:
         link = AccessLink(
             link_code=link_code,
             status=LinkStatus.ACTIVE,
+            granted_count=0,  # Initialize to 0 (database default)
+            denied_count=0,  # Initialize to 0 (database default)
             **link_data.model_dump(),
         )
 

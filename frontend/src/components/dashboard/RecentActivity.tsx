@@ -69,7 +69,7 @@ export default function RecentActivity({ logs }: RecentActivityProps) {
                     : 'bg-yellow-100 text-yellow-800'
               )}
             >
-              {log.status}
+              {log.status.toUpperCase()}
             </span>
           </div>
         )

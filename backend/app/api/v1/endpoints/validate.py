@@ -47,6 +47,8 @@ async def validate_link(
                 notes=None,
                 message=message,
                 auto_open=False,
+                active_on=None,
+                expiration=None,
             )
 
         # If auto_open is enabled and link is valid, trigger gate opening
@@ -88,6 +90,8 @@ async def validate_link(
                     notes=link.notes,
                     message="Gate opening automatically...",
                     auto_open=True,
+                    active_on=link.active_on,
+                    expiration=link.expiration,
                 )
 
             except Exception as webhook_error:
@@ -112,6 +116,8 @@ async def validate_link(
                     notes=link.notes,
                     message="Gate control system unavailable",
                     auto_open=True,
+                    active_on=link.active_on,
+                    expiration=link.expiration,
                 )
 
         return AccessLinkPublic(
@@ -120,6 +126,8 @@ async def validate_link(
             notes=link.notes,
             message=message,
             auto_open=link.auto_open,
+            active_on=link.active_on,
+            expiration=link.expiration,
         )
 
     except Exception as e:

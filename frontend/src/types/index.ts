@@ -127,6 +127,8 @@ export interface AccessLinkPublic {
   notes?: string
   message: string
   auto_open: boolean
+  active_on?: string
+  expiration?: string
 }
 
 export interface AccessLinkStats {

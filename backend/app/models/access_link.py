@@ -40,6 +40,24 @@ class LinkPurpose(str, PyEnum):
     OTHER = "other"
 
 
+def format_datetime_friendly(dt: datetime) -> str:
+    """
+    Format a datetime object in a user-friendly way.
+
+    Args:
+        dt: The datetime object to format (should be timezone-aware)
+
+    Returns:
+        A human-readable string like "October 23, 2025 at 10:44 AM UTC"
+    """
+    # Ensure the datetime has timezone info
+    if not dt.tzinfo:
+        dt = dt.replace(tzinfo=UTC)
+
+    # Format: "Month DD, YYYY at HH:MM AM/PM UTC"
+    return dt.strftime("%B %d, %Y at %I:%M %p %Z")
+
+
 class AccessLink(Base, BaseModelMixin):
     """Model for access links that grant temporary gate access"""
 
@@ -213,7 +231,7 @@ class AccessLink(Base, BaseModelMixin):
                     self.active_on if self.active_on.tzinfo else self.active_on.replace(tzinfo=UTC)
                 )
                 if now < active_on:
-                    return False, f"Link not active until {active_on.isoformat()}"
+                    return False, f"Link not active until {format_datetime_friendly(active_on)}"
 
             if self.expiration:
                 expiration = (
@@ -233,7 +251,7 @@ class AccessLink(Base, BaseModelMixin):
                 self.active_on if self.active_on.tzinfo else self.active_on.replace(tzinfo=UTC)
             )
             if now < active_on:
-                return False, f"Link not active until {active_on.isoformat()}"
+                return False, f"Link not active until {format_datetime_friendly(active_on)}"
 
         if self.expiration:
             expiration = (

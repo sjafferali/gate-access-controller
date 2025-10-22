@@ -127,6 +127,8 @@ class AccessLinkPublic(BaseModel):
     notes: str | None = None
     message: str
     auto_open: bool = False
+    active_on: datetime | None = None  # When link becomes active (for timezone-aware formatting)
+    expiration: datetime | None = None  # When link expires (for timezone-aware formatting)
 
 
 class AccessLinkStats(BaseModel):

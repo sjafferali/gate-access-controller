@@ -71,11 +71,21 @@ export default function EditLink() {
   useEffect(() => {
     if (link) {
       // Convert datetime strings to local datetime format for the inputs
+      // IMPORTANT: datetime-local inputs expect the time in the USER'S local timezone,
+      // not UTC. We need to format the date object directly to avoid timezone conversion.
       const formatDateTimeLocal = (dateString?: string) => {
         if (!dateString) return ''
         const date = new Date(dateString)
-        // Format: YYYY-MM-DDTHH:mm
-        return date.toISOString().slice(0, 16)
+
+        // Get the local date/time components (not UTC)
+        const year = date.getFullYear()
+        const month = String(date.getMonth() + 1).padStart(2, '0')
+        const day = String(date.getDate()).padStart(2, '0')
+        const hours = String(date.getHours()).padStart(2, '0')
+        const minutes = String(date.getMinutes()).padStart(2, '0')
+
+        // Format: YYYY-MM-DDTHH:mm (in local timezone)
+        return `${year}-${month}-${day}T${hours}:${minutes}`
       }
 
       reset({
@@ -307,7 +317,14 @@ export default function EditLink() {
                       const activeDate = new Date(value)
                       const now = new Date()
                       now.setMinutes(now.getMinutes() - 5) // Allow 5 minutes in the past for editing
-                      if (activeDate < now && value !== link?.active_on) {
+
+                      // Compare dates, not strings (original value is ISO format, form value is datetime-local format)
+                      const originalDate = link?.active_on ? new Date(link.active_on) : null
+                      const isSameAsOriginal =
+                        originalDate &&
+                        Math.abs(activeDate.getTime() - originalDate.getTime()) < 60000 // Within 1 minute
+
+                      if (activeDate < now && !isSameAsOriginal) {
                         return 'Active date cannot be in the past'
                       }
                       return true
@@ -341,7 +358,14 @@ export default function EditLink() {
                       if (!value) return true // Optional field
                       const expirationDate = new Date(value)
                       const now = new Date()
-                      if (expirationDate <= now && value !== link?.expiration) {
+
+                      // Compare dates, not strings (original value is ISO format, form value is datetime-local format)
+                      const originalDate = link?.expiration ? new Date(link.expiration) : null
+                      const isSameAsOriginal =
+                        originalDate &&
+                        Math.abs(expirationDate.getTime() - originalDate.getTime()) < 60000 // Within 1 minute
+
+                      if (expirationDate <= now && !isSameAsOriginal) {
                         return 'Expiration date must be in the future'
                       }
                       if (formValues.active_on) {
