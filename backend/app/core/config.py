@@ -113,6 +113,11 @@ class Settings(BaseSettings):
                     port=self.POSTGRES_PORT,
                     path=self.POSTGRES_DB,
                 ).unicode_string()
+                # Disable SSL for Docker network connections to avoid certificate permission issues
+                if "?" not in self.DATABASE_URL:
+                    self.DATABASE_URL += "?ssl=disable"
+                else:
+                    self.DATABASE_URL += "&ssl=disable"
         elif self.DATABASE_TYPE == DatabaseType.SQLITE:
             self.DATABASE_URL = f"sqlite+aiosqlite:///{self.SQLITE_DATABASE_PATH}"
 

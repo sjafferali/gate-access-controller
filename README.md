@@ -32,8 +32,16 @@ services:
     ports:
       - "8080:8080"
     environment:
-      - DATABASE_URL=postgresql://gateadmin:CHANGE_THIS_PASSWORD@postgres:5432/gate_access_db
-      - WEBHOOK_URL=http://192.168.1.100/api/open
+      # Database settings
+      - DATABASE_TYPE=postgresql
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=gateadmin
+      - POSTGRES_PASSWORD=CHANGE_THIS_PASSWORD
+      - POSTGRES_DB=gate_access_db
+
+      # Gate webhook settings
+      - GATE_WEBHOOK_URL=http://192.168.1.100/api/open
     depends_on:
       - postgres
     restart: unless-stopped
@@ -66,8 +74,12 @@ Access the dashboard at `http://localhost:8080`
 
 | Variable | Description | Example |
 |----------|-------------|---------|
-| `DATABASE_URL` | PostgreSQL connection string | `postgresql://user:pass@host:5432/db` |
-| `WEBHOOK_URL` | Gate controller webhook endpoint | `http://192.168.1.100/api/open` |
+| `DATABASE_TYPE` | Database backend to use | `postgresql` or `sqlite` |
+| `POSTGRES_HOST` | PostgreSQL host (if using PostgreSQL) | `postgres` or `localhost` |
+| `POSTGRES_USER` | PostgreSQL username (if using PostgreSQL) | `gateadmin` |
+| `POSTGRES_PASSWORD` | PostgreSQL password (if using PostgreSQL) | `your-secure-password` |
+| `POSTGRES_DB` | PostgreSQL database name (if using PostgreSQL) | `gate_access_db` |
+| `GATE_WEBHOOK_URL` | Gate controller webhook endpoint | `http://192.168.1.100/api/open` |
 
 ### Optional Environment Variables
 
