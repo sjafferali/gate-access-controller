@@ -5,32 +5,18 @@ from typing import Any
 
 from app.core.config import settings
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 # Ensure DATABASE_URL is set
 if not settings.DATABASE_URL:
     raise ValueError("DATABASE_URL must be configured")
 
-# Create async engine
-async_engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_pre_ping=True,
-    pool_size=10,
-    max_overflow=20,
-)
+# Global engine and session factory instances
+async_engine: AsyncEngine | None = None
+AsyncSessionLocal: async_sessionmaker[AsyncSession] | None = None
 
-# Create async session factory
-AsyncSessionLocal = async_sessionmaker(
-    async_engine,
-    class_=AsyncSession,
-    expire_on_commit=False,
-    autocommit=False,
-    autoflush=False,
-)
-
-# Create sync engine for migrations
+# Create sync engine for migrations (created at import time, only used in single-process context)
 sync_engine = create_engine(
     settings.DATABASE_URL.replace("+aiosqlite", "").replace("+asyncpg", ""),
     echo=settings.DEBUG,
@@ -46,6 +32,34 @@ SessionLocal = sessionmaker(
 )
 
 
+def init_async_engine() -> None:
+    """Initialize async engine and session factory.
+
+    This should be called after worker processes are forked to avoid
+    sharing asyncpg connections across processes with different event loops.
+    """
+    global async_engine, AsyncSessionLocal
+
+    if async_engine is not None:
+        return  # Already initialized
+
+    async_engine = create_async_engine(
+        settings.DATABASE_URL,
+        echo=settings.DEBUG,
+        pool_pre_ping=True,
+        pool_size=10,
+        max_overflow=20,
+    )
+
+    AsyncSessionLocal = async_sessionmaker(
+        async_engine,
+        class_=AsyncSession,
+        expire_on_commit=False,
+        autocommit=False,
+        autoflush=False,
+    )
+
+
 class Base(DeclarativeBase):
     """Base class for all database models"""
 
@@ -57,6 +71,9 @@ class Base(DeclarativeBase):
 # Database dependency for FastAPI
 async def get_db() -> AsyncGenerator[AsyncSession, None]:
     """Get database session for dependency injection"""
+    if AsyncSessionLocal is None:
+        raise RuntimeError("Database not initialized. Call init_async_engine() first.")
+
     async with AsyncSessionLocal() as session:
         try:
             yield session

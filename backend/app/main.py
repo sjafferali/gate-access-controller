@@ -16,13 +16,17 @@ from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import logger
 from app.core.scheduler import scheduler
-from app.db.base import async_engine
+from app.db.base import async_engine, init_async_engine
 
 
 async def check_expired_links_task() -> None:
     """Periodic task to check and expire links"""
     from app.db.base import AsyncSessionLocal
     from app.services.link_service import LinkService
+
+    if AsyncSessionLocal is None:
+        logger.warning("Database not initialized, skipping expired links check")
+        return
 
     async with AsyncSessionLocal() as db:
         link_service = LinkService(db)
@@ -39,6 +43,10 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     """Application lifespan events"""
     # Startup
     logger.info("Starting Gate Access Controller API", version=settings.APP_VERSION)
+
+    # Initialize database engine (must be done after worker fork for asyncpg)
+    init_async_engine()
+    logger.info("Database engine initialized")
 
     # Initialize Sentry if configured
     if settings.SENTRY_DSN:
@@ -65,7 +73,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Shutdown
     logger.info("Shutting down Gate Access Controller API")
     scheduler.stop()
-    await async_engine.dispose()
+    if async_engine is not None:
+        await async_engine.dispose()
 
 
 # Create FastAPI app
