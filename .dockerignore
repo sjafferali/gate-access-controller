@@ -1,0 +1,71 @@
+# Version control
+.git
+.github
+.gitignore
+
+# Python
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Project specific
+*.sqlite
+*.sqlite3
+*.db
+logs/
+data/
+temp_links/
+access_logs/
+
+# Documentation
+docs/
+*.md
+!README.md
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
+frontend/dist/
+frontend/node_modules/
+backend/.venv/
+backend/__pycache__/
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Secrets
+.env
+.env.*
+!.env.example

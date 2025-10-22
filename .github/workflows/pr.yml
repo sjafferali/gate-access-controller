@@ -1,0 +1,132 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  # Quick tests for PRs
+  quick-tests:
+    name: Quick Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_gate_access
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Install Poetry
+      run: |
+        python -m pip install --upgrade pip
+        python -m pip install poetry==1.7.1
+        python -m poetry config virtualenvs.create true
+        python -m poetry config virtualenvs.in-project true
+
+    - name: Backend tests
+      env:
+        DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_gate_access
+        TESTING: "true"
+      run: |
+        poetry install --with dev
+        poetry run pytest -x --ff
+
+    - name: Frontend build and type check
+      run: |
+        cd frontend
+        npm ci
+        npm run type-check
+        npm run build
+
+  # Linting
+  lint:
+    name: Linting
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: Python linting
+      run: |
+        pip install ruff==0.8.3
+        ruff check backend/ --output-format=github
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: frontend/package-lock.json
+
+    - name: Frontend linting
+      run: |
+        cd frontend
+        npm ci
+        npm run lint
+
+  # Security quick scan
+  security-quick:
+    name: Security Quick Check
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        severity: 'CRITICAL'
+        exit-code: '0'
+        ignore-unfixed: true
+
+  # Test Docker build
+  docker-build-test:
+    name: Test Docker Build
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Test Docker build
+      uses: docker/build-push-action@v6
+      with:
+        context: .
+        file: ./Dockerfile
+        push: false
+        tags: gate-access-controller:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max

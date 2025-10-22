@@ -1,0 +1,251 @@
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
+import { format } from 'date-fns'
+import { FiEdit, FiEye, FiCopy, FiTrash2 } from 'react-icons/fi'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import clsx from 'clsx'
+import toast from 'react-hot-toast'
+import { AccessLink, LinkStatus } from '@/types'
+import { accessLinksApi } from '@/services/api'
+import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal'
+
+interface LinksListProps {
+  links: AccessLink[]
+}
+
+const statusColors = {
+  [LinkStatus.ACTIVE]: 'bg-green-100 text-green-800',
+  [LinkStatus.EXPIRED]: 'bg-gray-100 text-gray-800',
+  [LinkStatus.DISABLED]: 'bg-yellow-100 text-yellow-800',
+  [LinkStatus.DELETED]: 'bg-red-100 text-red-800',
+}
+
+export default function LinksList({ links }: LinksListProps) {
+  const queryClient = useQueryClient()
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean
+    link: AccessLink | null
+  }>({
+    isOpen: false,
+    link: null,
+  })
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const copyLinkUrl = (linkCode: string) => {
+    const url = `${window.location.origin}/access/${linkCode}`
+    navigator.clipboard.writeText(url)
+    toast.success('Link URL copied to clipboard')
+  }
+
+  const deleteMutation = useMutation({
+    mutationFn: (linkId: string) => accessLinksApi.delete(linkId),
+    onSuccess: () => {
+      toast.success('Access link deleted successfully')
+      // Invalidate the links query to refresh the list
+      queryClient.invalidateQueries({ queryKey: ['links'] })
+      setDeleteModal({ isOpen: false, link: null })
+      setIsDeleting(false)
+    },
+    onError: () => {
+      toast.error('Failed to delete access link')
+      setIsDeleting(false)
+    },
+  })
+
+  const handleDeleteClick = (link: AccessLink) => {
+    setDeleteModal({ isOpen: true, link })
+  }
+
+  const handleDeleteConfirm = () => {
+    if (deleteModal.link) {
+      setIsDeleting(true)
+      deleteMutation.mutate(deleteModal.link.id)
+    }
+  }
+
+  const handleDeleteCancel = () => {
+    if (!isDeleting) {
+      setDeleteModal({ isOpen: false, link: null })
+    }
+  }
+
+  return (
+    <>
+      {/* Mobile Card View */}
+      <div className="space-y-4 md:hidden">
+        {links.map((link) => (
+          <div key={link.id} className="rounded-lg bg-white p-4 shadow">
+            <div className="mb-3 flex items-start justify-between">
+              <div className="flex-1 min-w-0">
+                <h3 className="text-base font-semibold text-gray-900 truncate">{link.name}</h3>
+                <p className="mt-1 text-sm text-gray-500">{link.purpose}</p>
+              </div>
+              <span
+                className={clsx(
+                  'ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold',
+                  statusColors[link.status]
+                )}
+              >
+                {link.status}
+              </span>
+            </div>
+
+            <div className="mb-3 space-y-2 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Code:</span>
+                <div className="flex items-center space-x-2">
+                  <code className="font-mono text-gray-900">{link.link_code}</code>
+                  <button
+                    onClick={() => copyLinkUrl(link.link_code)}
+                    className="text-gray-400 hover:text-gray-600 p-1"
+                  >
+                    <FiCopy className="h-4 w-4" />
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Usage:</span>
+                <span className="text-gray-900">
+                  {link.max_uses ? `${link.granted_count}/${link.max_uses}` : `${link.granted_count} uses`}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Expires:</span>
+                <span className="text-gray-900">
+                  {link.expiration ? format(new Date(link.expiration), 'MMM d, yyyy') : 'Never'}
+                </span>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-3 border-t border-gray-200 pt-3">
+              <Link
+                to={`/links/${link.id}`}
+                className="inline-flex items-center text-sm text-primary-600 hover:text-primary-900 font-medium"
+              >
+                <FiEye className="mr-1 h-4 w-4" />
+                View
+              </Link>
+              <Link
+                to={`/links/${link.id}/edit`}
+                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-900 font-medium"
+              >
+                <FiEdit className="mr-1 h-4 w-4" />
+                Edit
+              </Link>
+              <button
+                onClick={() => handleDeleteClick(link)}
+                className="inline-flex items-center text-sm text-red-600 hover:text-red-900 font-medium"
+              >
+                <FiTrash2 className="mr-1 h-4 w-4" />
+                Delete
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Desktop Table View */}
+      <div className="hidden md:block overflow-hidden rounded-lg bg-white shadow">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Code
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Status
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Usage
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Expires
+              </th>
+              <th className="relative px-6 py-3">
+                <span className="sr-only">Actions</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {links.map((link) => (
+              <tr key={link.id} className="hover:bg-gray-50">
+                <td className="whitespace-nowrap px-6 py-4">
+                  <div>
+                    <div className="text-sm font-medium text-gray-900">{link.name}</div>
+                    <div className="text-xs text-gray-500">{link.purpose}</div>
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-6 py-4">
+                  <div className="flex items-center space-x-2">
+                    <code className="text-sm font-mono text-gray-900">{link.link_code}</code>
+                    <button
+                      onClick={() => copyLinkUrl(link.link_code)}
+                      className="text-gray-400 hover:text-gray-600 p-1"
+                    >
+                      <FiCopy className="h-4 w-4" />
+                    </button>
+                  </div>
+                </td>
+                <td className="whitespace-nowrap px-6 py-4">
+                  <span
+                    className={clsx(
+                      'inline-flex rounded-full px-2 text-xs font-semibold leading-5',
+                      statusColors[link.status]
+                    )}
+                  >
+                    {link.status}
+                  </span>
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                  {link.max_uses ? (
+                    <span>{link.granted_count}/{link.max_uses}</span>
+                  ) : (
+                    <span>{link.granted_count} uses</span>
+                  )}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                  {link.expiration ? format(new Date(link.expiration), 'MMM d, yyyy') : 'Never'}
+                </td>
+                <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                  <div className="flex items-center justify-end space-x-3">
+                    <Link
+                      to={`/links/${link.id}`}
+                      className="text-primary-600 hover:text-primary-900 p-1"
+                    >
+                      <FiEye className="h-5 w-5" />
+                    </Link>
+                    <Link
+                      to={`/links/${link.id}/edit`}
+                      className="text-blue-600 hover:text-blue-900 p-1"
+                    >
+                      <FiEdit className="h-5 w-5" />
+                    </Link>
+                    <button
+                      onClick={() => handleDeleteClick(link)}
+                      className="text-red-600 hover:text-red-900 p-1"
+                    >
+                      <FiTrash2 className="h-5 w-5" />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        isOpen={deleteModal.isOpen}
+        onClose={handleDeleteCancel}
+        onConfirm={handleDeleteConfirm}
+        title="Delete Access Link"
+        message={`Are you sure you want to delete "${deleteModal.link?.name}"? This action cannot be undone.`}
+        isDeleting={isDeleting}
+      />
+    </>
+  )
+}

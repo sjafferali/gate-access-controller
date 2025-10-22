@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+  gate-access:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: gate-access-controller
+    ports:
+      - "8080:8080"
+    environment:
+      # Application settings
+      - APP_NAME=gate-access-controller
+      - ENVIRONMENT=development
+      - DEBUG=True
+      - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
+
+      # Database settings
+      - DATABASE_TYPE=${DATABASE_TYPE:-sqlite}
+      - SQLITE_DATABASE_PATH=/app/data/gate_access.db
+
+      # PostgreSQL settings (if using PostgreSQL)
+      - POSTGRES_HOST=${POSTGRES_HOST:-postgres}
+      - POSTGRES_PORT=5432
+      - POSTGRES_USER=${POSTGRES_USER:-gateadmin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-gatepassword}
+      - POSTGRES_DB=${POSTGRES_DB:-gate_access_db}
+
+      # Gate webhook settings
+      - GATE_WEBHOOK_URL=${GATE_WEBHOOK_URL:-}
+      - GATE_WEBHOOK_TOKEN=${GATE_WEBHOOK_TOKEN:-}
+      - GATE_OPEN_DURATION_SECONDS=5
+
+      # CORS settings
+      - CORS_ORIGINS=["http://localhost:8080","http://localhost:3000"]
+      - TRUSTED_HOSTS=["localhost","127.0.0.1"]
+
+      # Rate limiting
+      - RATE_LIMIT_PER_MINUTE=60
+      - LINK_CODE_LENGTH=8
+
+      # Logging
+      - LOG_LEVEL=INFO
+      - LOG_FORMAT=json
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - postgres
+    networks:
+      - gate-network
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: gate-postgres
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-gateadmin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-gatepassword}
+      - POSTGRES_DB=${POSTGRES_DB:-gate_access_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-gateadmin}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - gate-network
+
+volumes:
+  postgres_data:
+
+networks:
+  gate-network:
+    driver: bridge
