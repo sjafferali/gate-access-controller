@@ -145,11 +145,11 @@ class LinkService:
         link.granted_count += 1
         link.updated_at = datetime.now()
 
-        # Check if max uses has been reached and transition status to EXHAUSTED
+        # Check if max uses has been reached and transition status to INACTIVE
         if link.max_uses is not None and link.granted_count >= link.max_uses:
-            link.status = LinkStatus.EXHAUSTED
+            link.status = LinkStatus.INACTIVE
             logger.info(
-                "Link status transitioned to EXHAUSTED - max uses reached",
+                "Link status transitioned to INACTIVE - max uses reached",
                 link_id=link.id,
                 link_code=link.link_code,
                 link_name=link.name,

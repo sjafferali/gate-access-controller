@@ -26,7 +26,6 @@ class LinkStatus(str, PyEnum):
 
     ACTIVE = "active"
     INACTIVE = "inactive"
-    EXHAUSTED = "exhausted"
     DISABLED = "disabled"
 
 
@@ -205,6 +204,10 @@ class AccessLink(Base, BaseModelMixin):
             # Provide specific message based on why it's inactive
             now = datetime.now(UTC)
 
+            # Check if max uses exceeded
+            if self.max_uses and self.granted_count >= self.max_uses:
+                return False, "Maximum uses exceeded"
+
             if self.active_on:
                 active_on = (
                     self.active_on if self.active_on.tzinfo else self.active_on.replace(tzinfo=UTC)
@@ -222,9 +225,6 @@ class AccessLink(Base, BaseModelMixin):
                     return False, "Link has expired"
 
             return False, "Link is inactive"
-
-        if self.status == LinkStatus.EXHAUSTED:
-            return False, "Link has been exhausted"
 
         now = datetime.now(UTC)
 
@@ -255,8 +255,7 @@ class AccessLink(Base, BaseModelMixin):
         Status logic:
         - If is_deleted=True: Skip calculation (deleted links frozen at INACTIVE)
         - DISABLED: Manually set, not auto-calculated
-        - INACTIVE: Outside active time window (before active_on OR after expiration)
-        - EXHAUSTED: Max uses exceeded
+        - INACTIVE: Outside active time window (before active_on OR after expiration) OR max uses exceeded
         - ACTIVE: All conditions are met for the link to be usable
 
         Returns:
@@ -291,7 +290,7 @@ class AccessLink(Base, BaseModelMixin):
 
         # Check if max uses exceeded
         if self.max_uses and self.granted_count >= self.max_uses:
-            self.status = LinkStatus.EXHAUSTED
+            self.status = LinkStatus.INACTIVE
             return self.status != original_status
 
         # Otherwise, link should be ACTIVE

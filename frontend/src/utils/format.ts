@@ -9,7 +9,6 @@ export function formatLinkStatus(status: LinkStatus): string {
   const statusLabels: Record<LinkStatus, string> = {
     [LinkStatus.ACTIVE]: 'Active',
     [LinkStatus.INACTIVE]: 'Inactive',
-    [LinkStatus.EXHAUSTED]: 'Exhausted',
     [LinkStatus.DISABLED]: 'Disabled',
   }
   return statusLabels[status] || status
