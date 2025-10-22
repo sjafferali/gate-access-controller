@@ -1,7 +1,6 @@
 """Background scheduler for periodic tasks"""
 
 import asyncio
-import threading
 import time
 from collections.abc import Awaitable, Callable
 
@@ -9,12 +8,12 @@ from app.core.logging import logger
 
 
 class BackgroundScheduler:
-    """Simple thread-based scheduler for running periodic async tasks"""
+    """Asyncio-based scheduler for running periodic async tasks"""
 
     def __init__(self) -> None:
-        self._thread: threading.Thread | None = None
-        self._stop_event = threading.Event()
         self._tasks: list[tuple[Callable[[], Awaitable[None]], int]] = []
+        self._task_handles: list[asyncio.Task] = []
+        self._running = False
 
     def add_task(self, task: Callable[[], Awaitable[None]], interval_seconds: int) -> None:
         """
@@ -32,55 +31,72 @@ class BackgroundScheduler:
         )
 
     def start(self) -> None:
-        """Start the scheduler in a background thread"""
-        if self._thread is not None and self._thread.is_alive():
+        """Start all scheduled tasks in the current event loop"""
+        if self._running:
             logger.warning("Scheduler already running")
             return
 
-        self._stop_event.clear()
-        self._thread = threading.Thread(target=self._run, daemon=True)
-        self._thread.start()
+        self._running = True
+
+        # Create background tasks for each scheduled task
+        for task, interval in self._tasks:
+            task_handle = asyncio.create_task(self._run_periodic(task, interval))
+            self._task_handles.append(task_handle)
+
         logger.info("Background scheduler started")
 
-    def stop(self) -> None:
-        """Stop the scheduler and wait for the thread to finish"""
-        if self._thread is None or not self._thread.is_alive():
+    async def stop(self) -> None:
+        """Cancel all running tasks and wait for them to finish"""
+        if not self._running:
             logger.warning("Scheduler not running")
             return
 
         logger.info("Stopping background scheduler...")
-        self._stop_event.set()
-        self._thread.join(timeout=10)
+        self._running = False
+
+        # Cancel all task handles
+        for task_handle in self._task_handles:
+            task_handle.cancel()
+
+        # Wait for all tasks to finish cancellation
+        if self._task_handles:
+            await asyncio.gather(*self._task_handles, return_exceptions=True)
+
+        self._task_handles.clear()
         logger.info("Background scheduler stopped")
 
-    def _run(self) -> None:
-        """Main loop that runs in the background thread"""
-        # Track next run time for each task
-        next_run_times = {i: time.time() for i in range(len(self._tasks))}
+    async def _run_periodic(
+        self,
+        task: Callable[[], Awaitable[None]],
+        interval_seconds: int,
+    ) -> None:
+        """
+        Run a task periodically at the specified interval.
 
-        while not self._stop_event.is_set():
-            current_time = time.time()
+        Args:
+            task: Async function to execute
+            interval_seconds: Interval between executions in seconds
+        """
+        while self._running:
+            try:
+                await self._run_task(task)
+            except asyncio.CancelledError:
+                logger.info("Scheduled task cancelled", task=task.__name__)
+                break
+            except Exception as e:
+                logger.error(
+                    "Error running scheduled task",
+                    task=task.__name__,
+                    error=str(e),
+                    exc_info=True,
+                )
 
-            # Check each task to see if it's time to run
-            for idx, (task, interval) in enumerate(self._tasks):
-                if current_time >= next_run_times[idx]:
-                    try:
-                        # Run the async task in a new event loop
-                        asyncio.run(self._run_task(task))
-                        next_run_times[idx] = current_time + interval
-                    except Exception as e:
-                        logger.error(
-                            "Error running scheduled task",
-                            task=task.__name__,
-                            error=str(e),
-                            exc_info=True,
-                        )
-                        # Still update next run time to avoid tight error loops
-                        next_run_times[idx] = current_time + interval
-
-            # Sleep for a short time before checking again
-            # Use a small sleep to allow responsive shutdown
-            self._stop_event.wait(timeout=1)
+            # Wait for the interval before running again
+            try:
+                await asyncio.sleep(interval_seconds)
+            except asyncio.CancelledError:
+                logger.info("Scheduled task cancelled during sleep", task=task.__name__)
+                break
 
     async def _run_task(self, task: Callable[[], Awaitable[None]]) -> None:
         """

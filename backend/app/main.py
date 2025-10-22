@@ -72,7 +72,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     # Shutdown
     logger.info("Shutting down Gate Access Controller API")
-    scheduler.stop()
+    await scheduler.stop()
     if async_engine is not None:
         await async_engine.dispose()
 
