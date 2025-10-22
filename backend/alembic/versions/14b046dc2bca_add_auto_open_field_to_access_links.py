@@ -26,7 +26,7 @@ def upgrade() -> None:
             "auto_open",
             sa.Boolean(),
             nullable=False,
-            server_default=sa.text("0"),
+            server_default=sa.text("false"),
             comment="Automatically open gate when link is accessed (bypasses Request Access button)",
         ),
     )
