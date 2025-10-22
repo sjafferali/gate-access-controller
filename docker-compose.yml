@@ -14,7 +14,7 @@ services:
       - SECRET_KEY=${SECRET_KEY:-change-me-in-production}
 
       # Database settings
-      - DATABASE_TYPE=${DATABASE_TYPE:-sqlite}
+      - DATABASE_TYPE=${DATABASE_TYPE:-postgresql}
       - SQLITE_DATABASE_PATH=/app/data/gate_access.db
 
       # PostgreSQL settings (if using PostgreSQL)
