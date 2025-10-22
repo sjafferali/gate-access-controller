@@ -57,10 +57,10 @@ class LinkService:
             "link_id": link.id,
             "link_code": link_code,
             "name": link.name,
-            "status": link.status.value,
+            "status": link.status,  # Already a string since LinkStatus inherits from str
         }
         if status_changed:
-            log_data["status_calculated"] = f"ACTIVE → {link.status.value}"
+            log_data["status_calculated"] = f"ACTIVE → {link.status}"
 
         logger.info("Created new access link", **log_data)
 
