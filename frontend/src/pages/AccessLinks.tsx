@@ -80,7 +80,6 @@ export default function AccessLinks() {
               <option value="">All Status</option>
               <option value={LinkStatus.ACTIVE}>{formatLinkStatus(LinkStatus.ACTIVE)}</option>
               <option value={LinkStatus.INACTIVE}>{formatLinkStatus(LinkStatus.INACTIVE)}</option>
-              <option value={LinkStatus.EXHAUSTED}>{formatLinkStatus(LinkStatus.EXHAUSTED)}</option>
               <option value={LinkStatus.DISABLED}>{formatLinkStatus(LinkStatus.DISABLED)}</option>
             </select>
           </div>

@@ -93,11 +93,9 @@ export default function LinkDetails() {
                     ? 'bg-green-100 text-green-800'
                     : link.status === LinkStatus.INACTIVE
                       ? 'bg-gray-100 text-gray-800'
-                      : link.status === LinkStatus.EXHAUSTED
-                        ? 'bg-orange-100 text-orange-800'
-                        : link.status === LinkStatus.DISABLED
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : 'bg-red-100 text-red-800'
+                      : link.status === LinkStatus.DISABLED
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : 'bg-red-100 text-red-800'
                 }`}
               >
                 {formatLinkStatus(link.status)}

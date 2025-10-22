@@ -14,7 +14,6 @@ interface LinksSummaryProps {
 const statusColors = {
   [LinkStatus.ACTIVE]: 'bg-green-100 text-green-800',
   [LinkStatus.INACTIVE]: 'bg-gray-100 text-gray-800',
-  [LinkStatus.EXHAUSTED]: 'bg-orange-100 text-orange-800',
   [LinkStatus.DISABLED]: 'bg-yellow-100 text-yellow-800',
 }
 
