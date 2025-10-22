@@ -1,10 +1,12 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { FiCopy, FiEdit } from 'react-icons/fi'
+import { FiCopy, FiEdit, FiZap } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { accessLinksApi } from '@/services/api'
 import { LinkStatus } from '@/types'
+import { copyToClipboard } from '@/utils/clipboard'
+import { formatLinkStatus } from '@/utils/format'
 
 export default function LinkDetails() {
   const { linkId } = useParams<{ linkId: string }>()
@@ -16,11 +18,16 @@ export default function LinkDetails() {
     enabled: !!linkId,
   })
 
-  const copyLinkUrl = () => {
+  const copyLinkUrl = async () => {
     if (link) {
       const url = `${window.location.origin}/access/${link.link_code}`
-      void navigator.clipboard.writeText(url)
-      toast.success('Link URL copied to clipboard')
+      try {
+        await copyToClipboard(url)
+        toast.success('Link URL copied to clipboard')
+      } catch (error) {
+        console.error('Failed to copy to clipboard:', error)
+        toast.error('Failed to copy to clipboard')
+      }
     }
   }
 
@@ -84,14 +91,16 @@ export default function LinkDetails() {
                 className={`inline-flex rounded-full px-2 text-xs font-semibold leading-5 ${
                   link.status === LinkStatus.ACTIVE
                     ? 'bg-green-100 text-green-800'
-                    : link.status === LinkStatus.EXPIRED
+                    : link.status === LinkStatus.INACTIVE
                       ? 'bg-gray-100 text-gray-800'
-                      : link.status === LinkStatus.DISABLED
-                        ? 'bg-yellow-100 text-yellow-800'
-                        : 'bg-red-100 text-red-800'
+                      : link.status === LinkStatus.EXHAUSTED
+                        ? 'bg-orange-100 text-orange-800'
+                        : link.status === LinkStatus.DISABLED
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
                 }`}
               >
-                {link.status}
+                {formatLinkStatus(link.status)}
               </span>
             </dd>
           </div>
@@ -100,7 +109,10 @@ export default function LinkDetails() {
             <dt className="text-sm font-medium text-gray-500">Access Code</dt>
             <dd className="mt-1 flex items-center text-sm text-gray-900 sm:col-span-2 sm:mt-0">
               <code className="mr-2 font-mono text-lg">{link.link_code}</code>
-              <button onClick={copyLinkUrl} className="text-gray-400 hover:text-gray-600">
+              <button
+                onClick={() => void copyLinkUrl()}
+                className="text-gray-400 hover:text-gray-600"
+              >
                 <FiCopy className="h-4 w-4" />
               </button>
             </dd>
@@ -123,6 +135,22 @@ export default function LinkDetails() {
           <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
             <dt className="text-sm font-medium text-gray-500">Purpose</dt>
             <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">{link.purpose}</dd>
+          </div>
+
+          <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
+            <dt className="text-sm font-medium text-gray-500">Auto-Open</dt>
+            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+              {link.auto_open ? (
+                <span className="inline-flex items-center rounded-full bg-yellow-100 px-2.5 py-0.5 text-xs font-medium text-yellow-800">
+                  <FiZap className="mr-1 h-3 w-3" />
+                  Enabled - Gate opens automatically
+                </span>
+              ) : (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-800">
+                  Disabled - Requires button click
+                </span>
+              )}
+            </dd>
           </div>
 
           {link.notes && (

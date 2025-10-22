@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { FiCalendar, FiClock, FiHash, FiFileText, FiTag, FiUser } from 'react-icons/fi'
+import { FiCalendar, FiClock, FiHash, FiFileText, FiTag, FiUser, FiZap } from 'react-icons/fi'
 import { accessLinksApi } from '@/services/api'
 import { CreateAccessLink, LinkPurpose } from '@/types'
 import SearchableSelect from '@/components/form/SearchableSelect'
@@ -11,6 +11,17 @@ import SearchableSelect from '@/components/form/SearchableSelect'
 export default function CreateLink() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  // Get current date/time in datetime-local format (YYYY-MM-DDTHH:mm)
+  const getCurrentDateTime = () => {
+    const now = new Date()
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
 
   const {
     register,
@@ -20,6 +31,8 @@ export default function CreateLink() {
   } = useForm<CreateAccessLink>({
     defaultValues: {
       purpose: LinkPurpose.OTHER,
+      auto_open: false,
+      active_on: getCurrentDateTime(),
     },
   })
 
@@ -50,11 +63,12 @@ export default function CreateLink() {
     // Clean up the data before sending
     const cleanedData = {
       ...data,
+      // active_on is now required, so always include it
       // Convert empty strings to undefined/null for optional fields
-      active_on: data.active_on || undefined,
       expiration: data.expiration || undefined,
       max_uses: data.max_uses || undefined,
       notes: data.notes || undefined,
+      auto_open: data.auto_open ?? false,
     }
 
     createMutation.mutate(cleanedData)
@@ -180,12 +194,13 @@ export default function CreateLink() {
               <div>
                 <label htmlFor="active_on" className="mb-1 block text-sm font-medium text-gray-700">
                   <FiCalendar className="mr-1 inline text-gray-500" />
-                  Active From
+                  Active From *
                 </label>
                 <input
                   {...register('active_on', {
+                    required: 'Active date is required',
                     validate: (value) => {
-                      if (!value) return true // Optional field
+                      if (!value) return 'Active date is required'
                       const activeDate = new Date(value)
                       const now = new Date()
                       now.setMinutes(now.getMinutes() - 5) // Allow 5 minutes in the past
@@ -205,7 +220,9 @@ export default function CreateLink() {
                 {errors.active_on ? (
                   <p className="mt-1 text-sm text-red-600">{errors.active_on.message}</p>
                 ) : (
-                  <p className="mt-1 text-xs text-gray-500">Link becomes active at this time</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    When the link becomes active (defaults to now)
+                  </p>
                 )}
               </div>
 
@@ -290,6 +307,32 @@ export default function CreateLink() {
                   Number of times this link can be used (leave empty for unlimited)
                 </p>
               )}
+            </div>
+
+            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+              <div className="flex items-start">
+                <div className="flex h-5 items-center">
+                  <input
+                    {...register('auto_open')}
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                </div>
+                <div className="ml-3">
+                  <label
+                    htmlFor="auto_open"
+                    className="flex items-center text-sm font-medium text-gray-700"
+                  >
+                    <FiZap className="mr-1 text-yellow-500" />
+                    Auto-Open Gate
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    When enabled, the gate will open automatically as soon as the link is accessed,
+                    without requiring the user to click the "Request Access" button. Use this for
+                    seamless, one-click access experiences.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </div>

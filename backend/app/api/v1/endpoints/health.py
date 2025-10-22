@@ -79,9 +79,9 @@ async def database_health(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
 
 
 @router.get("/webhook")
-async def webhook_health() -> dict[str, Any]:
+async def webhook_health(db: AsyncSession = Depends(get_db)) -> dict[str, Any]:
     """Check webhook connectivity"""
-    webhook_service = WebhookService()
+    webhook_service = WebhookService(db)
 
     if not settings.GATE_WEBHOOK_URL:
         return {

@@ -1,9 +1,9 @@
 // Access Link Types
 export enum LinkStatus {
   ACTIVE = 'active',
-  EXPIRED = 'expired',
+  INACTIVE = 'inactive',
+  EXHAUSTED = 'exhausted',
   DISABLED = 'disabled',
-  DELETED = 'deleted',
 }
 
 export enum LinkPurpose {
@@ -29,27 +29,31 @@ export interface AccessLink {
   denied_count: number
   remaining_uses?: number
   is_active: boolean
+  auto_open: boolean
   created_at: string
   updated_at: string
+  is_deleted: boolean
+  deleted_at?: string
 }
 
 export interface CreateAccessLink {
   name: string
   notes?: string
   purpose: LinkPurpose
-  active_on?: string
+  active_on: string
   expiration?: string
   max_uses?: number
+  auto_open?: boolean
 }
 
 export interface UpdateAccessLink {
   name?: string
   notes?: string
   purpose?: LinkPurpose
-  status?: LinkStatus
   active_on?: string
   expiration?: string
   max_uses?: number
+  auto_open?: boolean
 }
 
 // Access Log Types
@@ -123,6 +127,7 @@ export interface AccessLinkPublic {
   name: string
   notes?: string
   message: string
+  auto_open: boolean
 }
 
 export interface AccessLinkStats {
@@ -153,4 +158,24 @@ export interface AccessLogSummary {
   denied: number
   errors: number
   unique_visitors: number
+}
+
+// System Settings Types
+export interface SystemSettings {
+  id: string
+  webhook_url: string | null
+  webhook_token: string | null
+  webhook_timeout: number
+  webhook_retries: number
+  gate_open_duration_seconds: number
+  created_at: string
+  updated_at: string
+}
+
+export interface SystemSettingsUpdate {
+  webhook_url?: string | null
+  webhook_token?: string | null
+  webhook_timeout?: number
+  webhook_retries?: number
+  gate_open_duration_seconds?: number
 }

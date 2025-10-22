@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlalchemy import (
     DateTime,
-    Enum,
     ForeignKey,
     Integer,
     String,
@@ -59,7 +58,7 @@ class AccessLog(Base, BaseModelMixin):
 
     # Access details
     status: Mapped[AccessStatus] = mapped_column(
-        Enum(AccessStatus),
+        String(20),
         nullable=False,
         index=True,
         comment="Status of the access attempt",
@@ -80,7 +79,7 @@ class AccessLog(Base, BaseModelMixin):
 
     # Additional context
     denial_reason: Mapped[DenialReason | None] = mapped_column(
-        Enum(DenialReason),
+        String(30),
         nullable=True,
         comment="Reason for denial if access was denied",
     )

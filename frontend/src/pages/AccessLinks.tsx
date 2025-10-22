@@ -7,11 +7,13 @@ import { LinkStatus } from '@/types'
 import LinksList from '@/components/links/LinksList'
 import Pagination from '@/components/common/Pagination'
 import { useDebounce } from '@/hooks/useDebounce'
+import { formatLinkStatus } from '@/utils/format'
 
 export default function AccessLinks() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<LinkStatus | ''>('')
+  const [showDeleted, setShowDeleted] = useState(false)
 
   // Debounce search input to avoid excessive API calls
   const debouncedSearch = useDebounce(search, 300)
@@ -19,16 +21,17 @@ export default function AccessLinks() {
   // Reset page to 1 when search or filter changes
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, statusFilter])
+  }, [debouncedSearch, statusFilter, showDeleted])
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['links', { page, search: debouncedSearch, status: statusFilter }],
+    queryKey: ['links', { page, search: debouncedSearch, status: statusFilter, showDeleted }],
     queryFn: () =>
       accessLinksApi.list({
         page,
         size: 20,
         search: debouncedSearch || undefined,
         status: statusFilter || undefined,
+        include_deleted: showDeleted,
       }),
   })
 
@@ -75,11 +78,25 @@ export default function AccessLinks() {
               className="rounded-md border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="">All Status</option>
-              <option value={LinkStatus.ACTIVE}>Active</option>
-              <option value={LinkStatus.EXPIRED}>Expired</option>
-              <option value={LinkStatus.DISABLED}>Disabled</option>
-              <option value={LinkStatus.DELETED}>Deleted</option>
+              <option value={LinkStatus.ACTIVE}>{formatLinkStatus(LinkStatus.ACTIVE)}</option>
+              <option value={LinkStatus.INACTIVE}>{formatLinkStatus(LinkStatus.INACTIVE)}</option>
+              <option value={LinkStatus.EXHAUSTED}>{formatLinkStatus(LinkStatus.EXHAUSTED)}</option>
+              <option value={LinkStatus.DISABLED}>{formatLinkStatus(LinkStatus.DISABLED)}</option>
             </select>
+          </div>
+
+          {/* Show Deleted Checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="show-deleted"
+              checked={showDeleted}
+              onChange={(e) => setShowDeleted(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <label htmlFor="show-deleted" className="text-sm text-gray-700">
+              Show deleted
+            </label>
           </div>
         </div>
       </div>

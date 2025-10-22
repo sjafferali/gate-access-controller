@@ -36,16 +36,24 @@ class LinkService:
             **link_data.model_dump(),
         )
 
+        # Auto-calculate status based on the provided fields
+        # (e.g., if expiration is already past or max_uses is 0)
+        status_changed = link.update_status()
+
         self.db.add(link)
         await self.db.commit()
         await self.db.refresh(link)
 
-        logger.info(
-            "Created new access link",
-            link_id=link.id,
-            link_code=link_code,
-            name=link.name,
-        )
+        log_data = {
+            "link_id": link.id,
+            "link_code": link_code,
+            "name": link.name,
+            "status": link.status.value,
+        }
+        if status_changed:
+            log_data["initial_status_override"] = f"ACTIVE → {link.status.value}"
+
+        logger.info("Created new access link", **log_data)
 
         return link
 
@@ -109,7 +117,7 @@ class LinkService:
         if not link:
             raise ValueError("Access link not found")
 
-        if link.status == LinkStatus.DELETED:
+        if link.is_deleted:
             raise ValueError("Cannot regenerate code for deleted link")
 
         # Generate new unique code
@@ -133,9 +141,22 @@ class LinkService:
         return link
 
     async def increment_granted_count(self, link: AccessLink) -> None:
-        """Increment the granted count for a link"""
+        """Increment the granted count for a link and transition status if max uses reached"""
         link.granted_count += 1
         link.updated_at = datetime.now()
+
+        # Check if max uses has been reached and transition status to EXHAUSTED
+        if link.max_uses is not None and link.granted_count >= link.max_uses:
+            link.status = LinkStatus.EXHAUSTED
+            logger.info(
+                "Link status transitioned to EXHAUSTED - max uses reached",
+                link_id=link.id,
+                link_code=link.link_code,
+                link_name=link.name,
+                granted_count=link.granted_count,
+                max_uses=link.max_uses,
+            )
+
         await self.db.commit()
 
     async def increment_denied_count(self, link: AccessLink) -> None:
@@ -145,10 +166,10 @@ class LinkService:
         await self.db.commit()
 
     async def check_and_expire_links(self) -> int:
-        """Check and expire links that have passed their expiration date"""
+        """Check and set links to inactive that have passed their expiration date"""
         now = datetime.now()
 
-        # Find links that should be expired
+        # Find links that should be inactive (expired)
         query = select(AccessLink).filter(
             AccessLink.status == LinkStatus.ACTIVE,
             AccessLink.expiration <= now,
@@ -156,16 +177,16 @@ class LinkService:
         result = await self.db.execute(query)
         expired_links = result.scalars().all()
 
-        # Update their status
+        # Update their status to INACTIVE
         for link in expired_links:
-            link.status = LinkStatus.EXPIRED
+            link.status = LinkStatus.INACTIVE
             link.updated_at = now
 
         await self.db.commit()
 
         if expired_links:
             logger.info(
-                "Expired links",
+                "Links set to inactive (expired)",
                 count=len(expired_links),
                 link_ids=[link.id for link in expired_links],
             )

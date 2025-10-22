@@ -100,13 +100,27 @@ export default function AccessPortal() {
           </div>
 
           {data.is_valid ? (
-            <button
-              onClick={handleRequestAccess}
-              disabled={isRequesting}
-              className="w-full rounded-lg bg-primary-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
-            >
-              {isRequesting ? 'Opening Gate...' : 'Request Access'}
-            </button>
+            data.auto_open ? (
+              <div className="rounded-md bg-green-50 p-4">
+                <div className="flex items-center justify-center">
+                  <div className="h-5 w-5 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
+                  <p className="ml-3 text-sm font-semibold text-green-800 sm:text-base">
+                    Gate is opening automatically...
+                  </p>
+                </div>
+                <p className="mt-2 text-center text-xs text-green-700 sm:text-sm">
+                  You may proceed once the gate opens.
+                </p>
+              </div>
+            ) : (
+              <button
+                onClick={handleRequestAccess}
+                disabled={isRequesting}
+                className="w-full rounded-lg bg-primary-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
+              >
+                {isRequesting ? 'Opening Gate...' : 'Open Gate'}
+              </button>
+            )
           ) : (
             <div className="rounded-md bg-red-50 p-4">
               <p className="text-sm text-red-800 sm:text-base">

@@ -15,6 +15,7 @@ import {
   FiAlertCircle,
 } from 'react-icons/fi'
 import SearchableSelect from '@/components/form/SearchableSelect'
+import { settingsApi } from '@/services/api'
 
 interface SettingsData {
   // General Settings
@@ -100,29 +101,60 @@ export default function Settings() {
   const emailNotifications = watch('emailNotifications')
   const autoDeleteExpiredLinks = watch('autoDeleteExpiredLinks')
 
-  // Load settings from localStorage on mount
+  // Load settings from API and localStorage on mount
   useEffect(() => {
-    const storedSettings = localStorage.getItem('gateAccessSettings')
-    if (storedSettings) {
+    const loadSettings = async () => {
       try {
-        const parsed = JSON.parse(storedSettings) as Partial<SettingsData>
-        reset({ ...defaultSettings, ...parsed })
-      } catch {
-        console.error('Failed to load settings')
+        // Load webhook settings from API
+        const apiSettings = await settingsApi.getSettings()
+
+        // Load other settings from localStorage
+        const storedSettings = localStorage.getItem('gateAccessSettings')
+        let localSettings = {}
+        if (storedSettings) {
+          try {
+            localSettings = JSON.parse(storedSettings) as Partial<SettingsData>
+          } catch {
+            console.error('Failed to parse localStorage settings')
+          }
+        }
+
+        // Merge settings: localStorage for non-webhook settings, API for webhook settings
+        reset({
+          ...defaultSettings,
+          ...localSettings,
+          webhookUrl: apiSettings.webhook_url || '',
+          webhookTimeout: apiSettings.webhook_timeout * 1000, // Convert seconds to ms for UI
+          webhookRetries: apiSettings.webhook_retries,
+        })
+      } catch (error) {
+        console.error('Failed to load settings from API:', error)
+        // Fall back to localStorage only
+        const storedSettings = localStorage.getItem('gateAccessSettings')
+        if (storedSettings) {
+          try {
+            const parsed = JSON.parse(storedSettings) as Partial<SettingsData>
+            reset({ ...defaultSettings, ...parsed })
+          } catch {
+            console.error('Failed to load settings')
+          }
+        }
       }
     }
+
+    void loadSettings()
   }, [reset])
 
   const timezoneOptions = [
-    { value: 'America/New_York', label: 'Eastern Time (ET)' },
-    { value: 'America/Chicago', label: 'Central Time (CT)' },
-    { value: 'America/Denver', label: 'Mountain Time (MT)' },
-    { value: 'America/Los_Angeles', label: 'Pacific Time (PT)' },
+    { value: 'America/New_York', label: 'Eastern Time (EST/EDT)' },
+    { value: 'America/Chicago', label: 'Central Time (CST/CDT)' },
+    { value: 'America/Denver', label: 'Mountain Time (MST/MDT)' },
+    { value: 'America/Los_Angeles', label: 'Pacific Time (PST/PDT)' },
     { value: 'UTC', label: 'UTC' },
-    { value: 'Europe/London', label: 'London' },
-    { value: 'Europe/Paris', label: 'Paris' },
-    { value: 'Asia/Tokyo', label: 'Tokyo' },
-    { value: 'Australia/Sydney', label: 'Sydney' },
+    { value: 'Europe/London', label: 'London (GMT/BST)' },
+    { value: 'Europe/Paris', label: 'Paris (CET/CEST)' },
+    { value: 'Asia/Tokyo', label: 'Tokyo (JST)' },
+    { value: 'Australia/Sydney', label: 'Sydney (AEDT/AEST)' },
   ]
 
   const dateFormatOptions = [
@@ -137,15 +169,26 @@ export default function Settings() {
     { value: '24h', label: '24-hour' },
   ]
 
-  const onSubmit = (data: SettingsData) => {
+  const onSubmit = async (data: SettingsData) => {
     setIsSubmitting(true)
 
-    // Save to localStorage for now (will be replaced with API call)
     try {
+      // Save webhook settings to API
+      await settingsApi.saveSettings({
+        webhook_url: data.webhookUrl || null,
+        webhook_token: null, // Not exposed in UI yet, could be added later
+        webhook_timeout: Math.floor(data.webhookTimeout / 1000), // Convert ms to seconds
+        webhook_retries: data.webhookRetries,
+        gate_open_duration_seconds: 5, // Default for now
+      })
+
+      // Save other settings to localStorage
       localStorage.setItem('gateAccessSettings', JSON.stringify(data))
+
       toast.success('Settings saved successfully')
       reset(data) // Reset form to mark as not dirty
-    } catch {
+    } catch (error) {
+      console.error('Failed to save settings:', error)
       toast.error('Failed to save settings')
     } finally {
       setIsSubmitting(false)
@@ -722,18 +765,18 @@ export default function Settings() {
               </div>
             )}
 
-            {/* Notice about localStorage */}
-            <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4">
+            {/* Notice about settings storage */}
+            <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
               <div className="flex">
                 <div className="flex-shrink-0">
-                  <FiAlertCircle className="h-5 w-5 text-yellow-400" />
+                  <FiAlertCircle className="h-5 w-5 text-blue-400" />
                 </div>
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-yellow-800">Settings Storage</h3>
-                  <div className="mt-2 text-sm text-yellow-700">
+                  <h3 className="text-sm font-medium text-blue-800">Settings Storage</h3>
+                  <div className="mt-2 text-sm text-blue-700">
                     <p>
-                      Settings are currently stored locally in your browser. They will persist
-                      across sessions but are not synced to the server.
+                      Webhook settings are saved to the server and will apply globally. Other
+                      settings are stored locally in your browser.
                     </p>
                   </div>
                 </div>

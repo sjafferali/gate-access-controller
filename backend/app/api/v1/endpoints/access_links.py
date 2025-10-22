@@ -28,6 +28,7 @@ async def list_access_links(
     link_status: LinkStatus | None = None,
     purpose: str | None = None,
     search: str | None = None,
+    include_deleted: bool = Query(False, description="Include soft-deleted links"),
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkListResponse:
     """List all access links with pagination and filtering"""
@@ -37,6 +38,11 @@ async def list_access_links(
 
         # Apply filters
         filters = []
+
+        # Filter deleted links by default
+        if not include_deleted:
+            filters.append(~AccessLink.is_deleted)
+
         if link_status:
             filters.append(AccessLink.status == link_status)
         if purpose:
@@ -168,8 +174,13 @@ async def update_access_link(
 
         # Update fields
         update_dict = update_data.model_dump(exclude_unset=True)
+        original_status = link.status
+
         for field, value in update_dict.items():
             setattr(link, field, value)
+
+        # Auto-calculate status based on updated fields
+        status_changed = link.update_status()
 
         # Update timestamp
         link.updated_at = datetime.now()
@@ -177,7 +188,16 @@ async def update_access_link(
         await db.commit()
         await db.refresh(link)
 
-        logger.info("Access link updated", link_id=link_id, updates=update_dict)
+        # Log the update with status transition info
+        log_data = {
+            "link_id": link_id,
+            "updates": update_dict,
+        }
+        if status_changed:
+            log_data["status_transition"] = f"{original_status.value} → {link.status.value}"
+            logger.info("Access link updated with status transition", **log_data)
+        else:
+            logger.info("Access link updated", **log_data)
 
         return AccessLinkResponse.model_validate(link)
 
@@ -195,10 +215,14 @@ async def update_access_link(
 @router.delete("/{link_id}", response_model=MessageResponse)
 async def delete_access_link(
     link_id: str,
-    permanent: bool = Query(False, description="Permanently delete the link"),
     db: AsyncSession = Depends(get_db),
 ) -> MessageResponse:
-    """Delete or mark an access link as deleted"""
+    """
+    Soft-delete an access link.
+
+    This sets is_deleted=True, deleted_at=now(), and status=INACTIVE.
+    This operation is NOT reversible.
+    """
     try:
         # Get the link
         query = select(AccessLink).filter(AccessLink.id == link_id)
@@ -211,28 +235,32 @@ async def delete_access_link(
                 detail="Access link not found",
             )
 
-        if permanent:
-            # Permanently delete the link
-            await db.delete(link)
-            message = "Access link permanently deleted"
-        else:
-            # Soft delete - just change status
-            link.status = LinkStatus.DELETED
-            link.updated_at = datetime.now()
-            message = "Access link marked as deleted"
+        # Check if already deleted
+        if link.is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Link is already deleted",
+            )
+
+        # Soft delete using model method
+        link.delete()
 
         await db.commit()
 
         logger.info(
-            "Access link deleted",
+            "Access link deleted (soft delete)",
             link_id=link_id,
-            permanent=permanent,
+            link_code=link.link_code,
+            link_name=link.name,
         )
 
         return MessageResponse(
-            message=message,
+            message="Access link deleted successfully",
             success=True,
-            data={"link_id": link_id, "permanent": permanent},
+            data={
+                "link_id": link_id,
+                "deleted_at": link.deleted_at.isoformat() if link.deleted_at else None,
+            },
         )
 
     except HTTPException:
@@ -316,4 +344,131 @@ async def regenerate_link_code(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to regenerate link code",
+        ) from e
+
+
+@router.post("/{link_id}/disable", response_model=AccessLinkResponse)
+async def disable_access_link(
+    link_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> AccessLinkResponse:
+    """
+    Disable an access link (reversible).
+
+    Sets status to DISABLED which prevents the link from granting access
+    and prevents automatic status recalculation. Can be re-enabled.
+    """
+    try:
+        # Get the link
+        query = select(AccessLink).filter(AccessLink.id == link_id)
+        result = await db.execute(query)
+        link = result.scalar_one_or_none()
+
+        if not link:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Access link not found",
+            )
+
+        if link.is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot disable a deleted link",
+            )
+
+        # Disable using model method
+        link.disable()
+
+        await db.commit()
+        await db.refresh(link)
+
+        logger.info(
+            "Access link disabled",
+            link_id=link_id,
+            link_code=link.link_code,
+            link_name=link.name,
+        )
+
+        return AccessLinkResponse.model_validate(link)
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Error disabling access link", link_id=link_id, error=str(e))
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to disable access link",
+        ) from e
+
+
+@router.post("/{link_id}/enable", response_model=AccessLinkResponse)
+async def enable_access_link(
+    link_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> AccessLinkResponse:
+    """
+    Re-enable a disabled access link.
+
+    If the link is currently DISABLED, this will recalculate its status
+    based on expiration, active_on, max_uses, etc.
+    """
+    try:
+        # Get the link
+        query = select(AccessLink).filter(AccessLink.id == link_id)
+        result = await db.execute(query)
+        link = result.scalar_one_or_none()
+
+        if not link:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Access link not found",
+            )
+
+        if link.is_deleted:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Cannot enable a deleted link",
+            )
+
+        original_status = link.status
+
+        # Enable using model method
+        status_changed = link.enable()
+
+        await db.commit()
+        await db.refresh(link)
+
+        log_data = {
+            "link_id": link_id,
+            "link_code": link.link_code,
+            "link_name": link.name,
+        }
+
+        if status_changed:
+            log_data["status_transition"] = f"{original_status.value} → {link.status.value}"
+            logger.info("Access link enabled with status change", **log_data)
+        else:
+            logger.info("Access link enable called (no status change)", **log_data)
+
+        return AccessLinkResponse.model_validate(link)
+
+    except HTTPException:
+        raise
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e),
+        ) from e
+    except Exception as e:
+        logger.error("Error enabling access link", link_id=link_id, error=str(e))
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to enable access link",
         ) from e

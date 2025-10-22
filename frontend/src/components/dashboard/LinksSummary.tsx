@@ -4,6 +4,8 @@ import { FiExternalLink, FiCopy, FiLink } from 'react-icons/fi'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
 import { AccessLink, LinkStatus } from '@/types'
+import { copyToClipboard } from '@/utils/clipboard'
+import { formatLinkStatus } from '@/utils/format'
 
 interface LinksSummaryProps {
   links: AccessLink[]
@@ -11,17 +13,22 @@ interface LinksSummaryProps {
 
 const statusColors = {
   [LinkStatus.ACTIVE]: 'bg-green-100 text-green-800',
-  [LinkStatus.EXPIRED]: 'bg-gray-100 text-gray-800',
+  [LinkStatus.INACTIVE]: 'bg-gray-100 text-gray-800',
+  [LinkStatus.EXHAUSTED]: 'bg-orange-100 text-orange-800',
   [LinkStatus.DISABLED]: 'bg-yellow-100 text-yellow-800',
-  [LinkStatus.DELETED]: 'bg-red-100 text-red-800',
 }
 
 export default function LinksSummary({ links }: LinksSummaryProps) {
-  const copyCode = (code: string, e: React.MouseEvent) => {
+  const copyCode = async (code: string, e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    void navigator.clipboard.writeText(code)
-    toast.success('Access code copied to clipboard')
+    try {
+      await copyToClipboard(code)
+      toast.success('Access code copied to clipboard')
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error)
+      toast.error('Failed to copy to clipboard')
+    }
   }
 
   if (links.length === 0) {
@@ -56,14 +63,14 @@ export default function LinksSummary({ links }: LinksSummaryProps) {
                   statusColors[link.status]
                 )}
               >
-                {link.status}
+                {formatLinkStatus(link.status)}
               </span>
             </div>
             <div className="mt-1 flex items-center space-x-3 text-xs text-gray-500">
               <span className="flex items-center">
                 Code: <code className="mx-1 font-mono">{link.link_code}</code>
                 <button
-                  onClick={(e) => copyCode(link.link_code, e)}
+                  onClick={(e) => void copyCode(link.link_code, e)}
                   className="text-gray-400 transition-colors hover:text-gray-600"
                   title="Copy access code"
                 >

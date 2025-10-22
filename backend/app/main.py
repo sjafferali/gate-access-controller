@@ -15,7 +15,23 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.scheduler import scheduler
 from app.db.base import async_engine
+
+
+async def check_expired_links_task() -> None:
+    """Periodic task to check and expire links"""
+    from app.db.base import AsyncSessionLocal
+    from app.services.link_service import LinkService
+
+    async with AsyncSessionLocal() as db:
+        link_service = LinkService(db)
+        expired_count = await link_service.check_and_expire_links()
+        if expired_count > 0:
+            logger.info(
+                "Expired links check completed",
+                expired_count=expired_count,
+            )
 
 
 @asynccontextmanager
@@ -37,10 +53,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         )
         logger.info("Sentry monitoring initialized")
 
+    # Start background scheduler
+    scheduler.add_task(
+        check_expired_links_task,
+        settings.LINK_EXPIRATION_CHECK_INTERVAL_SECONDS,
+    )
+    scheduler.start()
+
     yield
 
     # Shutdown
     logger.info("Shutting down Gate Access Controller API")
+    scheduler.stop()
     await async_engine.dispose()
 
 

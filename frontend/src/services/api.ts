@@ -12,6 +12,8 @@ import type {
   AccessLogStats,
   AccessLogSummary,
   HealthResponse,
+  SystemSettings,
+  SystemSettingsUpdate,
 } from '@/types'
 
 // Interface for API error responses
@@ -64,6 +66,7 @@ export const accessLinksApi = {
     status?: string
     purpose?: string
     search?: string
+    include_deleted?: boolean
   }): Promise<PaginatedResponse<AccessLink>> => {
     const { data } = await apiClient.get<PaginatedResponse<AccessLink>>('/v1/links', { params })
     return data
@@ -84,10 +87,18 @@ export const accessLinksApi = {
     return data
   },
 
-  delete: async (linkId: string, permanent = false): Promise<MessageResponse> => {
-    const { data } = await apiClient.delete<MessageResponse>(`/v1/links/${linkId}`, {
-      params: { permanent },
-    })
+  delete: async (linkId: string): Promise<MessageResponse> => {
+    const { data } = await apiClient.delete<MessageResponse>(`/v1/links/${linkId}`)
+    return data
+  },
+
+  disable: async (linkId: string): Promise<AccessLink> => {
+    const { data } = await apiClient.post<AccessLink>(`/v1/links/${linkId}/disable`)
+    return data
+  },
+
+  enable: async (linkId: string): Promise<AccessLink> => {
+    const { data } = await apiClient.post<AccessLink>(`/v1/links/${linkId}/enable`)
     return data
   },
 
@@ -174,6 +185,29 @@ export const healthApi = {
     const { data } = await apiClient.get<{ status: string; configured: boolean }>(
       '/v1/health/webhook'
     )
+    return data
+  },
+}
+
+// Settings API
+export const settingsApi = {
+  getSettings: async (): Promise<SystemSettings> => {
+    const { data } = await apiClient.get<SystemSettings>('/v1/settings')
+    return data
+  },
+
+  saveSettings: async (settings: SystemSettingsUpdate): Promise<SystemSettings> => {
+    const { data } = await apiClient.post<SystemSettings>('/v1/settings', settings)
+    return data
+  },
+
+  updateSettings: async (settings: SystemSettingsUpdate): Promise<SystemSettings> => {
+    const { data } = await apiClient.put<SystemSettings>('/v1/settings', settings)
+    return data
+  },
+
+  resetSettings: async (): Promise<MessageResponse> => {
+    const { data } = await apiClient.delete<MessageResponse>('/v1/settings')
     return data
   },
 }

@@ -3,6 +3,8 @@
 import time
 
 import httpx
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from tenacity import retry, stop_after_attempt, wait_exponential
 
 from app.core.config import settings
@@ -12,11 +14,50 @@ from app.core.logging import logger
 class WebhookService:
     """Service for triggering gate control webhooks"""
 
-    def __init__(self) -> None:
+    def __init__(self, db: AsyncSession | None = None) -> None:
+        self.db = db
         self.webhook_url = settings.GATE_WEBHOOK_URL
         self.webhook_token = settings.GATE_WEBHOOK_TOKEN
         self.timeout = settings.GATE_WEBHOOK_TIMEOUT
         self.open_duration = settings.GATE_OPEN_DURATION_SECONDS
+
+    async def _load_settings_from_db(self) -> None:
+        """
+        Load webhook settings from database if available.
+        Falls back to environment variables if database settings don't exist.
+        """
+        if not self.db:
+            return
+
+        try:
+            from app.models.system_settings import SystemSettings
+
+            result = await self.db.execute(select(SystemSettings).limit(1))
+            db_settings = result.scalar_one_or_none()
+
+            if db_settings:
+                # Override with database settings if they exist
+                if db_settings.webhook_url:
+                    self.webhook_url = db_settings.webhook_url
+                if db_settings.webhook_token:
+                    self.webhook_token = db_settings.webhook_token
+                self.timeout = db_settings.webhook_timeout
+                self.open_duration = db_settings.gate_open_duration_seconds
+
+                logger.info(
+                    "Loaded webhook settings from database",
+                    webhook_url_configured=bool(self.webhook_url),
+                    timeout=self.timeout,
+                    open_duration=self.open_duration,
+                )
+            else:
+                logger.debug("No database settings found, using environment variables")
+
+        except Exception as e:
+            logger.warning(
+                "Error loading settings from database, falling back to environment variables",
+                error=str(e),
+            )
 
     @retry(
         stop=stop_after_attempt(3),
@@ -29,6 +70,9 @@ class WebhookService:
         Returns:
             int: Response time in milliseconds
         """
+        # Load settings from database if available
+        await self._load_settings_from_db()
+
         if not self.webhook_url:
             logger.warning("Gate webhook URL not configured, simulating success")
             return 0
@@ -105,6 +149,9 @@ class WebhookService:
         Returns:
             tuple: (success, message, response_time_ms)
         """
+        # Load settings from database if available
+        await self._load_settings_from_db()
+
         if not self.webhook_url:
             return False, "Webhook URL not configured", None
 

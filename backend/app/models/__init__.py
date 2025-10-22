@@ -3,6 +3,7 @@
 from app.models.access_link import AccessLink, LinkPurpose, LinkStatus
 from app.models.access_log import AccessLog, AccessStatus, DenialReason
 from app.models.base_model import BaseModelMixin, TimestampMixin, UUIDMixin
+from app.models.system_settings import SystemSettings
 
 __all__ = [
     # Base models
@@ -17,4 +18,6 @@ __all__ = [
     "AccessLog",
     "AccessStatus",
     "DenialReason",
+    # System Settings
+    "SystemSettings",
 ]

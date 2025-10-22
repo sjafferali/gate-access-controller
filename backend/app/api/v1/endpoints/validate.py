@@ -32,9 +32,10 @@ def get_client_ip(request: Request) -> str:
 @router.get("/{link_code}", response_model=AccessLinkPublic)
 async def validate_link(
     link_code: str,
+    request: Request,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkPublic:
-    """Validate if a link code is valid without using it"""
+    """Validate if a link code is valid without using it. If auto_open is enabled, automatically trigger gate opening."""
     try:
         link_service = LinkService(db)
         is_valid, message, link = await link_service.validate_link(link_code)
@@ -45,13 +46,80 @@ async def validate_link(
                 name="Unknown",
                 notes=None,
                 message=message,
+                auto_open=False,
             )
+
+        # If auto_open is enabled and link is valid, trigger gate opening
+        if link.auto_open and is_valid:
+            client_ip = get_client_ip(request)
+            user_agent = request.headers.get("User-Agent", "Unknown")
+
+            # Create access log entry
+            log = AccessLog(
+                link_id=link.id,
+                link_code_used=link_code,
+                ip_address=client_ip,
+                user_agent=user_agent,
+            )
+
+            try:
+                webhook_service = WebhookService(db)
+                response_time = await webhook_service.trigger_gate_open()
+                log.webhook_response_time_ms = response_time
+                log.status = AccessStatus.GRANTED
+
+                # Increment granted count
+                await link_service.increment_granted_count(link)
+
+                db.add(log)
+                await db.commit()
+
+                logger.info(
+                    "Auto-open: Access granted",
+                    link_code=link_code,
+                    link_name=link.name,
+                    ip=client_ip,
+                    response_time_ms=response_time,
+                )
+
+                return AccessLinkPublic(
+                    is_valid=True,
+                    name=link.name,
+                    notes=link.notes,
+                    message="Gate opening automatically...",
+                    auto_open=True,
+                )
+
+            except Exception as webhook_error:
+                # Webhook failed
+                log.status = AccessStatus.ERROR
+                log.error_message = str(webhook_error)
+                log.denial_reason = DenialReason.WEBHOOK_FAILED
+
+                db.add(log)
+                await db.commit()
+
+                logger.error(
+                    "Auto-open: Webhook failed",
+                    link_code=link_code,
+                    ip=client_ip,
+                    error=str(webhook_error),
+                )
+
+                return AccessLinkPublic(
+                    is_valid=False,
+                    name=link.name,
+                    notes=link.notes,
+                    message="Gate control system unavailable",
+                    auto_open=True,
+                )
 
         return AccessLinkPublic(
             is_valid=is_valid,
             name=link.name,
             notes=link.notes,
             message=message,
+            auto_open=link.auto_open,
         )
 
     except Exception as e:
@@ -74,7 +142,7 @@ async def request_access(
 
     try:
         link_service = LinkService(db)
-        webhook_service = WebhookService()
+        webhook_service = WebhookService(db)
 
         # Validate the link
         is_valid, message, link = await link_service.validate_link(link_code)

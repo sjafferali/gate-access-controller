@@ -72,6 +72,7 @@ class Settings(BaseSettings):
     # Link Settings
     DEFAULT_LINK_EXPIRATION_HOURS: int = 24
     MAX_LINK_USES: int = 100
+    LINK_EXPIRATION_CHECK_INTERVAL_SECONDS: int = 60  # Check every 60 seconds
 
     # Logging
     LOG_LEVEL: str = "INFO"

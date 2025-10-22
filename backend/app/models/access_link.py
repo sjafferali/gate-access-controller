@@ -5,8 +5,8 @@ from enum import Enum as PyEnum
 from typing import TYPE_CHECKING
 
 from sqlalchemy import (
+    Boolean,
     DateTime,
-    Enum,
     Integer,
     String,
     Text,
@@ -25,9 +25,9 @@ class LinkStatus(str, PyEnum):
     """Status options for access links"""
 
     ACTIVE = "active"
-    EXPIRED = "expired"
+    INACTIVE = "inactive"
+    EXHAUSTED = "exhausted"
     DISABLED = "disabled"
-    DELETED = "deleted"
 
 
 class LinkPurpose(str, PyEnum):
@@ -58,7 +58,7 @@ class AccessLink(Base, BaseModelMixin):
 
     # Status and lifecycle
     status: Mapped[LinkStatus] = mapped_column(
-        Enum(LinkStatus),
+        String(20),
         nullable=False,
         default=LinkStatus.ACTIVE,
         index=True,
@@ -90,7 +90,7 @@ class AccessLink(Base, BaseModelMixin):
         comment="Additional notes or instructions",
     )
     purpose: Mapped[LinkPurpose] = mapped_column(
-        Enum(LinkPurpose),
+        String(30),
         nullable=False,
         default=LinkPurpose.OTHER,
         comment="Purpose category for the link",
@@ -113,6 +113,28 @@ class AccessLink(Base, BaseModelMixin):
         Integer,
         nullable=True,
         comment="Maximum number of uses allowed (null = unlimited)",
+    )
+
+    # Auto-open feature
+    auto_open: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        comment="Automatically open gate when link is accessed (bypasses Request Access button)",
+    )
+
+    # Soft delete fields
+    is_deleted: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+        index=True,
+        comment="Soft delete flag - deleted links are hidden by default",
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp when the link was deleted",
     )
 
     # Relationships
@@ -172,14 +194,37 @@ class AccessLink(Base, BaseModelMixin):
         Returns:
             tuple[bool, str]: (can_grant, reason_if_denied)
         """
-        if self.status == LinkStatus.DELETED:
-            return False, "Link has been deleted"
+        # Check deleted first (highest priority denial reason)
+        if self.is_deleted:
+            return False, "Link no longer exists"
 
         if self.status == LinkStatus.DISABLED:
             return False, "Link has been disabled"
 
-        if self.status == LinkStatus.EXPIRED:
-            return False, "Link has expired"
+        if self.status == LinkStatus.INACTIVE:
+            # Provide specific message based on why it's inactive
+            now = datetime.now(UTC)
+
+            if self.active_on:
+                active_on = (
+                    self.active_on if self.active_on.tzinfo else self.active_on.replace(tzinfo=UTC)
+                )
+                if now < active_on:
+                    return False, f"Link not active until {active_on.isoformat()}"
+
+            if self.expiration:
+                expiration = (
+                    self.expiration
+                    if self.expiration.tzinfo
+                    else self.expiration.replace(tzinfo=UTC)
+                )
+                if now > expiration:
+                    return False, "Link has expired"
+
+            return False, "Link is inactive"
+
+        if self.status == LinkStatus.EXHAUSTED:
+            return False, "Link has been exhausted"
 
         now = datetime.now(UTC)
 
@@ -201,6 +246,110 @@ class AccessLink(Base, BaseModelMixin):
             return False, "Maximum uses exceeded"
 
         return True, "Access granted"
+
+    def update_status(self) -> bool:
+        """
+        Automatically calculate and update the link status based on current properties.
+        This should be called after updating active_on, expiration, or max_uses.
+
+        Status logic:
+        - If is_deleted=True: Skip calculation (deleted links frozen at INACTIVE)
+        - DISABLED: Manually set, not auto-calculated
+        - INACTIVE: Outside active time window (before active_on OR after expiration)
+        - EXHAUSTED: Max uses exceeded
+        - ACTIVE: All conditions are met for the link to be usable
+
+        Returns:
+            bool: True if status was changed, False otherwise
+        """
+        # Store original status for comparison
+        original_status = self.status
+
+        # Don't auto-update if deleted or manually disabled
+        if self.is_deleted or self.status == LinkStatus.DISABLED:
+            return False
+
+        now = datetime.now(UTC)
+
+        # Check if not yet active (before start)
+        if self.active_on:
+            active_on = (
+                self.active_on if self.active_on.tzinfo else self.active_on.replace(tzinfo=UTC)
+            )
+            if now < active_on:
+                self.status = LinkStatus.INACTIVE
+                return self.status != original_status
+
+        # Check if expired (after end)
+        if self.expiration:
+            expiration = (
+                self.expiration if self.expiration.tzinfo else self.expiration.replace(tzinfo=UTC)
+            )
+            if now > expiration:
+                self.status = LinkStatus.INACTIVE
+                return self.status != original_status
+
+        # Check if max uses exceeded
+        if self.max_uses and self.granted_count >= self.max_uses:
+            self.status = LinkStatus.EXHAUSTED
+            return self.status != original_status
+
+        # Otherwise, link should be ACTIVE
+        self.status = LinkStatus.ACTIVE
+        return self.status != original_status
+
+    def delete(self) -> None:
+        """
+        Soft-delete this link.
+
+        Sets:
+        - is_deleted = True
+        - deleted_at = current UTC time
+        - status = INACTIVE (frozen, won't recalculate)
+
+        This operation is NOT reversible.
+        """
+        self.is_deleted = True
+        self.deleted_at = datetime.now(UTC)
+        self.status = LinkStatus.INACTIVE
+        self.updated_at = datetime.now(UTC)
+
+    def disable(self) -> None:
+        """
+        Manually disable this link (reversible).
+
+        Sets status to DISABLED which prevents the link from granting access
+        and prevents automatic status recalculation. Can be re-enabled with enable() method.
+
+        Raises:
+            ValueError: If link is already deleted
+        """
+        if self.is_deleted:
+            raise ValueError("Cannot disable a deleted link")
+
+        self.status = LinkStatus.DISABLED
+        self.updated_at = datetime.now(UTC)
+
+    def enable(self) -> bool:
+        """
+        Re-enable a disabled link.
+
+        If currently DISABLED, recalculates the proper status.
+        Returns True if status was changed.
+
+        Returns:
+            bool: True if status was changed, False otherwise
+
+        Raises:
+            ValueError: If link is deleted
+        """
+        if self.is_deleted:
+            raise ValueError("Cannot enable a deleted link")
+
+        if self.status == LinkStatus.DISABLED:
+            return self.update_status()
+
+        return False
 
     def __repr__(self) -> str:
         return f"<AccessLink(id={self.id}, code={self.link_code}, name={self.name}, status={self.status.value})>"
