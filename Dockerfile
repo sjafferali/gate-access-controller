@@ -24,7 +24,7 @@ COPY frontend/ ./
 RUN npm run build
 
 # Stage 2: Python Backend Build
-FROM python:3.11-slim AS backend-builder
+FROM python:3.14-slim AS backend-builder
 
 WORKDIR /app
 
@@ -49,7 +49,7 @@ RUN poetry config virtualenvs.create false \
 COPY backend/ ./backend/
 
 # Stage 3: Final Production Image
-FROM python:3.11-slim
+FROM python:3.14-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
