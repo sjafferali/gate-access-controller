@@ -63,9 +63,11 @@ export default function CreateLink() {
     // Clean up the data before sending
     const cleanedData = {
       ...data,
-      // active_on is now required, so always include it
+      // Convert datetime-local format to ISO string for backend compatibility
+      // HTML datetime-local gives us "YYYY-MM-DDTHH:mm" but backend needs full ISO format
+      active_on: new Date(data.active_on).toISOString(),
+      expiration: data.expiration ? new Date(data.expiration).toISOString() : undefined,
       // Convert empty strings to undefined/null for optional fields
-      expiration: data.expiration || undefined,
       max_uses: data.max_uses || undefined,
       notes: data.notes || undefined,
       auto_open: data.auto_open ?? false,
