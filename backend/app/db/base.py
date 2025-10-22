@@ -5,7 +5,12 @@ from typing import Any
 
 from app.core.config import settings
 from sqlalchemy import create_engine
-from sqlalchemy.ext.asyncio import AsyncEngine, AsyncSession, async_sessionmaker, create_async_engine
+from sqlalchemy.ext.asyncio import (
+    AsyncEngine,
+    AsyncSession,
+    async_sessionmaker,
+    create_async_engine,
+)
 from sqlalchemy.orm import DeclarativeBase, Session, sessionmaker
 
 # Ensure DATABASE_URL is set
@@ -42,6 +47,9 @@ def init_async_engine() -> None:
 
     if async_engine is not None:
         return  # Already initialized
+
+    if not settings.DATABASE_URL:
+        raise ValueError("DATABASE_URL must be configured")
 
     async_engine = create_async_engine(
         settings.DATABASE_URL,

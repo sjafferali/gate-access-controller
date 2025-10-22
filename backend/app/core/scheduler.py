@@ -12,7 +12,7 @@ class BackgroundScheduler:
 
     def __init__(self) -> None:
         self._tasks: list[tuple[Callable[[], Awaitable[None]], int]] = []
-        self._task_handles: list[asyncio.Task] = []
+        self._task_handles: list[asyncio.Task[None]] = []
         self._running = False
 
     def add_task(self, task: Callable[[], Awaitable[None]], interval_seconds: int) -> None:
