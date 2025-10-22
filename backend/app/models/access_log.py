@@ -147,4 +147,4 @@ class AccessLog(Base, BaseModelMixin):
         return self.link.name if self.link else None
 
     def __repr__(self) -> str:
-        return f"<AccessLog(id={self.id}, status={self.status.value}, ip={self.ip_address}, link_code={self.link_code_used})>"
+        return f"<AccessLog(id={self.id}, status={self.status}, ip={self.ip_address}, link_code={self.link_code_used})>"

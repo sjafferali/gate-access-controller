@@ -351,4 +351,4 @@ class AccessLink(Base, BaseModelMixin):
         return False
 
     def __repr__(self) -> str:
-        return f"<AccessLink(id={self.id}, code={self.link_code}, name={self.name}, status={self.status.value})>"
+        return f"<AccessLink(id={self.id}, code={self.link_code}, name={self.name}, status={self.status})>"

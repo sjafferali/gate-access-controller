@@ -105,7 +105,7 @@ async def create_access_link(
             "Access link created",
             link_id=link.id,
             name=link.name,
-            purpose=link.purpose.value,
+            purpose=link.purpose,
         )
 
         return AccessLinkResponse.model_validate(link)
@@ -194,7 +194,7 @@ async def update_access_link(
             "updates": update_dict,
         }
         if status_changed:
-            log_data["status_transition"] = f"{original_status.value} → {link.status.value}"
+            log_data["status_transition"] = f"{original_status} → {link.status}"
             logger.info("Access link updated with status transition", **log_data)
         else:
             logger.info("Access link updated", **log_data)
@@ -451,7 +451,7 @@ async def enable_access_link(
         }
 
         if status_changed:
-            log_data["status_transition"] = f"{original_status.value} → {link.status.value}"
+            log_data["status_transition"] = f"{original_status} → {link.status}"
             logger.info("Access link enabled with status change", **log_data)
         else:
             logger.info("Access link enable called (no status change)", **log_data)

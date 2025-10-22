@@ -48,10 +48,10 @@ class LinkService:
             "link_id": link.id,
             "link_code": link_code,
             "name": link.name,
-            "status": link.status.value,
+            "status": link.status,
         }
         if status_changed:
-            log_data["initial_status_override"] = f"ACTIVE → {link.status.value}"
+            log_data["initial_status_override"] = f"ACTIVE → {link.status}"
 
         logger.info("Created new access link", **log_data)
 
