@@ -48,8 +48,11 @@ fi
 echo "Running database migrations..."
 cd /app/backend
 
+# Ensure versions directory exists
+mkdir -p alembic/versions
+
 # Create initial migration if none exist
-if [ ! -f "alembic/versions/*.py" ]; then
+if [ -z "$(ls -A alembic/versions/*.py 2>/dev/null)" ]; then
     echo "Creating initial migration..."
     alembic revision --autogenerate -m "Initial migration" || true
 fi
