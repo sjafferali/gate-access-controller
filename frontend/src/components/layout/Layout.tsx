@@ -1,7 +1,19 @@
-import { Outlet, NavLink } from 'react-router-dom'
-import { FiHome, FiLink, FiFileText, FiSettings, FiActivity, FiMenu, FiX } from 'react-icons/fi'
+import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import {
+  FiHome,
+  FiLink,
+  FiFileText,
+  FiSettings,
+  FiActivity,
+  FiMenu,
+  FiX,
+  FiZap,
+} from 'react-icons/fi'
 import { useState } from 'react'
 import clsx from 'clsx'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
+import toast from 'react-hot-toast'
+import { accessLinksApi } from '@/services/api'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
@@ -12,6 +24,26 @@ const navigation = [
 
 export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
+
+  const quickLinkMutation = useMutation({
+    mutationFn: async () => accessLinksApi.createQuickLink(),
+    onSuccess: (newLink) => {
+      toast.success('Quick link created successfully!')
+      // Invalidate links query to refresh the list
+      void queryClient.invalidateQueries({ queryKey: ['links'] })
+      // Navigate to the new link's detail page
+      void navigate(`/links/${newLink.id}`)
+    },
+    onError: () => {
+      toast.error('Failed to create quick link')
+    },
+  })
+
+  const handleQuickLink = () => {
+    quickLinkMutation.mutate()
+  }
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -62,10 +94,26 @@ export default function Layout() {
           </nav>
 
           {/* Bottom section */}
-          <div className="border-t border-gray-200 p-4">
-            <div className="flex items-center">
-              <FiSettings className="h-5 w-5 text-gray-400" />
-              <span className="ml-3 text-sm text-gray-600">Admin Panel</span>
+          <div className="border-t border-gray-200 p-3">
+            {/* Quick Link Button */}
+            <button
+              onClick={handleQuickLink}
+              disabled={quickLinkMutation.isPending}
+              className={clsx(
+                'group mb-3 flex w-full items-center justify-center rounded-lg px-3 py-2.5 text-sm font-medium transition-all',
+                'bg-primary-600 text-white hover:bg-primary-700 active:bg-primary-800',
+                'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                'disabled:cursor-not-allowed disabled:opacity-50'
+              )}
+            >
+              <FiZap className="mr-2 h-5 w-5" />
+              {quickLinkMutation.isPending ? 'Creating...' : 'Quick Link'}
+            </button>
+
+            {/* Admin Panel Label */}
+            <div className="flex items-center px-2">
+              <FiSettings className="h-4 w-4 text-gray-400" />
+              <span className="ml-2 text-xs text-gray-500">Admin Panel</span>
             </div>
           </div>
         </div>

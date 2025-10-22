@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { FiCopy, FiEdit, FiZap } from 'react-icons/fi'
+import { FiCopy, FiEdit, FiZap, FiFileText } from 'react-icons/fi'
 import toast from 'react-hot-toast'
 import { accessLinksApi } from '@/services/api'
 import { LinkStatus } from '@/types'
@@ -70,6 +70,15 @@ export default function LinkDetails() {
           <p className="mt-1 text-sm text-gray-500">Access Link Details</p>
         </div>
         <div className="flex space-x-2">
+          <button
+            onClick={() => {
+              void navigate(`/logs?linkId=${linkId}`)
+            }}
+            className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+          >
+            <FiFileText className="mr-2 h-4 w-4" />
+            View Logs
+          </button>
           <button
             onClick={() => {
               void navigate(`/links/${linkId}/edit`)

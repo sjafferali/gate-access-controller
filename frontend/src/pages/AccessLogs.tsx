@@ -1,16 +1,26 @@
 import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
-import { FiFilter, FiSearch, FiFileText } from 'react-icons/fi'
+import { FiFilter, FiSearch, FiFileText, FiX } from 'react-icons/fi'
 import { accessLogsApi } from '@/services/api'
 import { AccessStatus } from '@/types'
 import Pagination from '@/components/common/Pagination'
 import { useDebounce } from '@/hooks/useDebounce'
 
 export default function AccessLogs() {
+  const [searchParams, setSearchParams] = useSearchParams()
+  const linkIdFromUrl = searchParams.get('linkId')
+
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<AccessStatus | ''>('')
+  const [linkIdFilter, setLinkIdFilter] = useState<string | null>(linkIdFromUrl)
+
+  // Update linkIdFilter when URL parameter changes
+  useEffect(() => {
+    setLinkIdFilter(linkIdFromUrl)
+  }, [linkIdFromUrl])
 
   // Debounce search input to avoid excessive API calls
   const debouncedSearch = useDebounce(search, 300)
@@ -18,19 +28,29 @@ export default function AccessLogs() {
   // Reset page to 1 when search or filter changes
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, statusFilter])
+  }, [debouncedSearch, statusFilter, linkIdFilter])
 
   const { data, isLoading } = useQuery({
-    queryKey: ['logs', { page, search: debouncedSearch, status: statusFilter }],
+    queryKey: [
+      'logs',
+      { page, search: debouncedSearch, status: statusFilter, linkId: linkIdFilter },
+    ],
     queryFn: () =>
       accessLogsApi.list({
         page,
         size: 50,
         status: statusFilter || undefined,
+        link_id: linkIdFilter || undefined,
         // Use ip_address for search if it looks like an IP, otherwise leave it for backend to handle
         ip_address: debouncedSearch && debouncedSearch.includes('.') ? debouncedSearch : undefined,
       }),
   })
+
+  const clearLinkFilter = () => {
+    setLinkIdFilter(null)
+    searchParams.delete('linkId')
+    setSearchParams(searchParams)
+  }
 
   const statusColors = {
     [AccessStatus.GRANTED]: 'bg-green-100 text-green-800',
@@ -44,6 +64,22 @@ export default function AccessLogs() {
         <h1 className="text-2xl font-bold text-gray-900">Access Logs</h1>
         <p className="mt-1 text-sm text-gray-500">View all gate access attempts and their status</p>
       </div>
+
+      {linkIdFilter && (
+        <div className="flex items-center justify-between rounded-md border border-blue-200 bg-blue-50 px-4 py-3">
+          <div className="flex items-center">
+            <FiFilter className="mr-2 h-5 w-5 text-blue-600" />
+            <span className="text-sm text-blue-800">Showing logs for a specific link</span>
+          </div>
+          <button
+            onClick={clearLinkFilter}
+            className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800"
+          >
+            <FiX className="mr-1 h-4 w-4" />
+            Clear filter
+          </button>
+        </div>
+      )}
 
       <div className="card">
         <div className="mb-4 flex flex-col space-y-4 sm:flex-row sm:items-center sm:space-x-4 sm:space-y-0">
@@ -70,9 +106,9 @@ export default function AccessLogs() {
               className="rounded-md border border-gray-300 py-2 pl-3 pr-8 text-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
             >
               <option value="">All Status</option>
-              <option value={AccessStatus.GRANTED}>Granted</option>
-              <option value={AccessStatus.DENIED}>Denied</option>
-              <option value={AccessStatus.ERROR}>Error</option>
+              <option value={AccessStatus.GRANTED}>GRANTED</option>
+              <option value={AccessStatus.DENIED}>DENIED</option>
+              <option value={AccessStatus.ERROR}>ERROR</option>
             </select>
           </div>
         </div>
@@ -102,9 +138,6 @@ export default function AccessLogs() {
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       IP Address
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                      Response Time
-                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200 bg-white">
@@ -122,14 +155,11 @@ export default function AccessLogs() {
                             statusColors[log.status]
                           }`}
                         >
-                          {log.status}
+                          {log.status.toUpperCase()}
                         </span>
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
                         {log.ip_address}
-                      </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                        {log.webhook_response_time_ms ? `${log.webhook_response_time_ms}ms` : '-'}
                       </td>
                     </tr>
                   ))}

@@ -743,7 +743,7 @@ export default function Settings() {
                         htmlFor="enableDetailedLogging"
                         className="ml-2 block text-sm text-gray-700"
                       >
-                        Enable detailed logging (includes user agent, response times)
+                        Enable detailed logging (includes user agent)
                       </label>
                     </div>
 

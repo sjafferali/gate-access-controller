@@ -252,50 +252,27 @@ class AccessLink(Base, BaseModelMixin):
         Automatically calculate and update the link status based on current properties.
         This should be called after updating active_on, expiration, or max_uses.
 
-        Status logic:
-        - If is_deleted=True: Skip calculation (deleted links frozen at INACTIVE)
-        - DISABLED: Manually set, not auto-calculated
-        - INACTIVE: Outside active time window (before active_on OR after expiration) OR max uses exceeded
-        - ACTIVE: All conditions are met for the link to be usable
+        This method uses the central calculate_link_status() utility function to
+        determine the correct status. See app.utils.link_status for the complete
+        status calculation logic.
 
         Returns:
             bool: True if status was changed, False otherwise
         """
+        from app.utils.link_status import calculate_link_status
+
         # Store original status for comparison
         original_status = self.status
 
-        # Don't auto-update if deleted or manually disabled
-        if self.is_deleted or self.status == LinkStatus.DISABLED:
-            return False
+        # Calculate the new status using the central utility function
+        new_status = calculate_link_status(self)
 
-        now = datetime.now(UTC)
+        # Update the status if it changed
+        if new_status != original_status:
+            self.status = new_status
+            return True
 
-        # Check if not yet active (before start)
-        if self.active_on:
-            active_on = (
-                self.active_on if self.active_on.tzinfo else self.active_on.replace(tzinfo=UTC)
-            )
-            if now < active_on:
-                self.status = LinkStatus.INACTIVE
-                return self.status != original_status
-
-        # Check if expired (after end)
-        if self.expiration:
-            expiration = (
-                self.expiration if self.expiration.tzinfo else self.expiration.replace(tzinfo=UTC)
-            )
-            if now > expiration:
-                self.status = LinkStatus.INACTIVE
-                return self.status != original_status
-
-        # Check if max uses exceeded
-        if self.max_uses and self.granted_count >= self.max_uses:
-            self.status = LinkStatus.INACTIVE
-            return self.status != original_status
-
-        # Otherwise, link should be ACTIVE
-        self.status = LinkStatus.ACTIVE
-        return self.status != original_status
+        return False
 
     def delete(self) -> None:
         """
@@ -304,13 +281,16 @@ class AccessLink(Base, BaseModelMixin):
         Sets:
         - is_deleted = True
         - deleted_at = current UTC time
-        - status = INACTIVE (frozen, won't recalculate)
+        - status = INACTIVE (calculated via central function)
 
         This operation is NOT reversible.
         """
+        from app.utils.link_status import calculate_link_status
+
         self.is_deleted = True
         self.deleted_at = datetime.now(UTC)
-        self.status = LinkStatus.INACTIVE
+        # Calculate status (will be INACTIVE since is_deleted=True)
+        self.status = calculate_link_status(self)
         self.updated_at = datetime.now(UTC)
 
     def disable(self) -> None:
@@ -319,6 +299,9 @@ class AccessLink(Base, BaseModelMixin):
 
         Sets status to DISABLED which prevents the link from granting access
         and prevents automatic status recalculation. Can be re-enabled with enable() method.
+
+        Note: DISABLED status is set directly without using calculate_link_status()
+        because it's a manual override by the user.
 
         Raises:
             ValueError: If link is already deleted
@@ -333,8 +316,9 @@ class AccessLink(Base, BaseModelMixin):
         """
         Re-enable a disabled link.
 
-        If currently DISABLED, recalculates the proper status.
-        Returns True if status was changed.
+        If currently DISABLED, recalculates the proper status based on expiration,
+        active_on, max_uses, etc. The link will become ACTIVE if all conditions are met,
+        or INACTIVE if expired/max uses exceeded.
 
         Returns:
             bool: True if status was changed, False otherwise
@@ -346,7 +330,17 @@ class AccessLink(Base, BaseModelMixin):
             raise ValueError("Cannot enable a deleted link")
 
         if self.status == LinkStatus.DISABLED:
-            return self.update_status()
+            # Temporarily set to ACTIVE to bypass the DISABLED preservation
+            # in calculate_link_status(). This allows the central function to
+            # properly evaluate expiration, max_uses, etc.
+            self.status = LinkStatus.ACTIVE
+
+            # Now recalculate status - will stay ACTIVE or become INACTIVE
+            # based on temporal/usage constraints
+            self.update_status()
+
+            # We definitely changed from DISABLED to something else, so return True
+            return True
 
         return False
 

@@ -40,8 +40,23 @@ export default function EditLink() {
     handleSubmit,
     control,
     reset,
+    setValue,
     formState: { errors },
   } = useForm<UpdateAccessLink>()
+
+  // Helper function to set expiration date using shortcuts
+  const setExpirationShortcut = (hours: number) => {
+    const now = new Date()
+    now.setHours(now.getHours() + hours)
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hoursStr = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    setValue('expiration', `${year}-${month}-${day}T${hoursStr}:${minutes}`, {
+      shouldValidate: true,
+    })
+  }
 
   const purposeOptions = [
     { value: LinkPurpose.DELIVERY, label: 'Delivery' },
@@ -318,7 +333,7 @@ export default function EditLink() {
                   className="mb-1 block text-sm font-medium text-gray-700"
                 >
                   <FiCalendar className="mr-1 inline text-gray-500" />
-                  Expires On
+                  Expires On (Optional)
                 </label>
                 <input
                   {...register('expiration', {
@@ -348,8 +363,74 @@ export default function EditLink() {
                 {errors.expiration ? (
                   <p className="mt-1 text-sm text-red-600">{errors.expiration.message}</p>
                 ) : (
-                  <p className="mt-1 text-xs text-gray-500">Link expires and becomes invalid</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    When the link expires (leave empty for no expiration)
+                  </p>
                 )}
+
+                {/* Quick Expiration Shortcuts */}
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium text-gray-600">Quick select:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(1)}
+                      className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                    >
+                      <FiClock className="mr-1 h-3 w-3" />1 hour
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(3)}
+                      className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                    >
+                      <FiClock className="mr-1 h-3 w-3" />3 hours
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(12)}
+                      className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                    >
+                      <FiClock className="mr-1 h-3 w-3" />
+                      12 hours
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(24)}
+                      className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />1 day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(72)}
+                      className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />3 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(168)}
+                      className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1.5 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />1 week
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(720)}
+                      className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1.5 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />1 month
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setValue('expiration', '', { shouldValidate: true })}
+                      className="inline-flex items-center rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                    >
+                      Never Expire
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

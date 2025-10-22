@@ -15,6 +15,7 @@ import type {
   SystemSettings,
   SystemSettingsUpdate,
 } from '@/types'
+import { LinkPurpose } from '@/types'
 
 // Interface for API error responses
 interface ApiErrorResponse {
@@ -109,6 +110,56 @@ export const accessLinksApi = {
 
   getStats: async (linkId: string): Promise<AccessLinkStats> => {
     const { data } = await apiClient.get<AccessLinkStats>(`/v1/links/${linkId}/stats`)
+    return data
+  },
+
+  createQuickLink: async (): Promise<AccessLink> => {
+    // Load settings from localStorage to get defaults
+    const storedSettings = localStorage.getItem('gateAccessSettings')
+    let defaultExpirationHours = 24
+    let defaultMaxUses = 1
+
+    if (storedSettings) {
+      try {
+        const settings = JSON.parse(storedSettings) as {
+          defaultExpirationHours?: number
+          defaultMaxUses?: number
+        }
+        defaultExpirationHours = settings.defaultExpirationHours ?? 24
+        defaultMaxUses = settings.defaultMaxUses ?? 1
+      } catch {
+        console.error('Failed to parse settings from localStorage')
+      }
+    }
+
+    // Generate timestamp for the link name and notes
+    const now = new Date()
+    const timestamp = now.toLocaleString('en-US', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false,
+    })
+
+    // Calculate expiration time
+    const activeOn = new Date()
+    const expiration = new Date(activeOn.getTime() + defaultExpirationHours * 60 * 60 * 1000)
+
+    // Create quick link data
+    const quickLinkData: CreateAccessLink = {
+      name: `quicklink ${timestamp}`,
+      notes: `Quick link generated on ${timestamp}. Expires in ${defaultExpirationHours} hours with ${defaultMaxUses} max use(s).`,
+      purpose: LinkPurpose.OTHER,
+      active_on: activeOn.toISOString(),
+      expiration: expiration.toISOString(),
+      max_uses: defaultMaxUses,
+      auto_open: false,
+    }
+
+    const { data } = await apiClient.post<AccessLink>('/v1/links', quickLinkData)
     return data
   },
 }

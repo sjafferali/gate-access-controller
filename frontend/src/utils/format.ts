@@ -7,9 +7,9 @@ import { LinkStatus } from '../types'
  */
 export function formatLinkStatus(status: LinkStatus): string {
   const statusLabels: Record<LinkStatus, string> = {
-    [LinkStatus.ACTIVE]: 'Active',
-    [LinkStatus.INACTIVE]: 'Inactive',
-    [LinkStatus.DISABLED]: 'Disabled',
+    [LinkStatus.ACTIVE]: 'ACTIVE',
+    [LinkStatus.INACTIVE]: 'INACTIVE',
+    [LinkStatus.DISABLED]: 'DISABLED',
   }
   return statusLabels[status] || status
 }

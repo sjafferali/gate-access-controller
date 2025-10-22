@@ -23,18 +23,64 @@ export default function CreateLink() {
     return `${year}-${month}-${day}T${hours}:${minutes}`
   }
 
+  // Get default expiration based on settings
+  const getDefaultExpiration = () => {
+    try {
+      const storedSettings = localStorage.getItem('gateAccessSettings')
+      if (storedSettings) {
+        const settings = JSON.parse(storedSettings) as { defaultExpirationHours?: number }
+        const expirationHours = settings.defaultExpirationHours || 24
+        const expirationDate = new Date()
+        expirationDate.setHours(expirationDate.getHours() + expirationHours)
+        const year = expirationDate.getFullYear()
+        const month = String(expirationDate.getMonth() + 1).padStart(2, '0')
+        const day = String(expirationDate.getDate()).padStart(2, '0')
+        const hours = String(expirationDate.getHours()).padStart(2, '0')
+        const minutes = String(expirationDate.getMinutes()).padStart(2, '0')
+        return `${year}-${month}-${day}T${hours}:${minutes}`
+      }
+    } catch (error) {
+      console.error('Failed to load default expiration from settings:', error)
+    }
+    // Default to 24 hours from now if settings not found
+    const defaultDate = new Date()
+    defaultDate.setHours(defaultDate.getHours() + 24)
+    const year = defaultDate.getFullYear()
+    const month = String(defaultDate.getMonth() + 1).padStart(2, '0')
+    const day = String(defaultDate.getDate()).padStart(2, '0')
+    const hours = String(defaultDate.getHours()).padStart(2, '0')
+    const minutes = String(defaultDate.getMinutes()).padStart(2, '0')
+    return `${year}-${month}-${day}T${hours}:${minutes}`
+  }
+
   const {
     register,
     handleSubmit,
     control,
+    setValue,
     formState: { errors },
   } = useForm<CreateAccessLink>({
     defaultValues: {
       purpose: LinkPurpose.OTHER,
       auto_open: false,
       active_on: getCurrentDateTime(),
+      expiration: getDefaultExpiration(),
     },
   })
+
+  // Helper function to set expiration date using shortcuts
+  const setExpirationShortcut = (hours: number) => {
+    const now = new Date()
+    now.setHours(now.getHours() + hours)
+    const year = now.getFullYear()
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const hoursStr = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    setValue('expiration', `${year}-${month}-${day}T${hoursStr}:${minutes}`, {
+      shouldValidate: true,
+    })
+  }
 
   const purposeOptions = [
     { value: LinkPurpose.DELIVERY, label: 'Delivery' },
@@ -234,7 +280,7 @@ export default function CreateLink() {
                   className="mb-1 block text-sm font-medium text-gray-700"
                 >
                   <FiCalendar className="mr-1 inline text-gray-500" />
-                  Expires On
+                  Expires On (Optional)
                 </label>
                 <input
                   {...register('expiration', {
@@ -264,8 +310,83 @@ export default function CreateLink() {
                 {errors.expiration ? (
                   <p className="mt-1 text-sm text-red-600">{errors.expiration.message}</p>
                 ) : (
-                  <p className="mt-1 text-xs text-gray-500">Link expires and becomes invalid</p>
+                  <p className="mt-1 text-xs text-gray-500">
+                    When the link expires (leave empty for no expiration)
+                  </p>
                 )}
+
+                {/* Quick Expiration Shortcuts */}
+                <div className="mt-3">
+                  <p className="mb-2 text-xs font-medium text-gray-600">Quick select:</p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(1)}
+                      className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                    >
+                      <FiClock className="mr-1 h-3 w-3" />1 hour
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(3)}
+                      className="inline-flex items-center rounded-full bg-blue-50 px-3 py-1.5 text-xs font-medium text-blue-700 transition-colors hover:bg-blue-100 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1"
+                    >
+                      <FiClock className="mr-1 h-3 w-3" />3 hours
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(12)}
+                      className="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition-colors hover:bg-indigo-100 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1"
+                    >
+                      <FiClock className="mr-1 h-3 w-3" />
+                      12 hours
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(24)}
+                      className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />1 day
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(72)}
+                      className="inline-flex items-center rounded-full bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 transition-colors hover:bg-purple-100 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />3 days
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(168)}
+                      className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1.5 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />1 week
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setExpirationShortcut(720)}
+                      className="inline-flex items-center rounded-full bg-pink-50 px-3 py-1.5 text-xs font-medium text-pink-700 transition-colors hover:bg-pink-100 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-1"
+                    >
+                      <FiCalendar className="mr-1 h-3 w-3" />1 month
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setValue('expiration', getDefaultExpiration(), { shouldValidate: true })
+                      }
+                      className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-1"
+                    >
+                      Reset to Default
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setValue('expiration', '', { shouldValidate: true })}
+                      className="inline-flex items-center rounded-full bg-green-50 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-1"
+                    >
+                      Never Expire
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 

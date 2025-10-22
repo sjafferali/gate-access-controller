@@ -20,6 +20,8 @@ class LinkService:
 
     async def create_link(self, link_data: AccessLinkCreate) -> AccessLink:
         """Create a new access link with a unique code"""
+        from app.utils.link_status import calculate_link_status
+
         # Generate unique link code
         link_code = await self._generate_unique_code()
 
@@ -29,16 +31,21 @@ class LinkService:
                 hours=settings.DEFAULT_LINK_EXPIRATION_HOURS
             )
 
-        # Create the link
+        # Create the link with initial ACTIVE status
+        # Status will be recalculated immediately after creation
         link = AccessLink(
             link_code=link_code,
             status=LinkStatus.ACTIVE,
             **link_data.model_dump(),
         )
 
-        # Auto-calculate status based on the provided fields
-        # (e.g., if expiration is already past or max_uses is 0)
-        status_changed = link.update_status()
+        # Calculate the correct status based on the provided fields
+        # (e.g., may be INACTIVE if expiration is in the past, not yet active, etc.)
+        calculated_status = calculate_link_status(link)
+        status_changed = calculated_status != LinkStatus.ACTIVE
+
+        if status_changed:
+            link.status = calculated_status
 
         self.db.add(link)
         await self.db.commit()
@@ -48,10 +55,10 @@ class LinkService:
             "link_id": link.id,
             "link_code": link_code,
             "name": link.name,
-            "status": link.status,
+            "status": link.status.value,
         }
         if status_changed:
-            log_data["initial_status_override"] = f"ACTIVE → {link.status}"
+            log_data["status_calculated"] = f"ACTIVE → {link.status.value}"
 
         logger.info("Created new access link", **log_data)
 
@@ -141,18 +148,25 @@ class LinkService:
         return link
 
     async def increment_granted_count(self, link: AccessLink) -> None:
-        """Increment the granted count for a link and transition status if max uses reached"""
+        """Increment the granted count for a link and recalculate status"""
+        from app.utils.link_status import calculate_link_status
+
+        original_status = link.status
         link.granted_count += 1
         link.updated_at = datetime.now()
 
-        # Check if max uses has been reached and transition status to INACTIVE
-        if link.max_uses is not None and link.granted_count >= link.max_uses:
-            link.status = LinkStatus.INACTIVE
+        # Recalculate status using central function
+        # (may transition to INACTIVE if max uses reached)
+        new_status = calculate_link_status(link)
+
+        if new_status != original_status:
+            link.status = new_status
             logger.info(
-                "Link status transitioned to INACTIVE - max uses reached",
+                "Link status transitioned after granting access",
                 link_id=link.id,
                 link_code=link.link_code,
                 link_name=link.name,
+                status_transition=f"{original_status.value} → {new_status.value}",
                 granted_count=link.granted_count,
                 max_uses=link.max_uses,
             )
@@ -166,29 +180,43 @@ class LinkService:
         await self.db.commit()
 
     async def check_and_expire_links(self) -> int:
-        """Check and set links to inactive that have passed their expiration date"""
+        """
+        Check and update status for links that may need status recalculation.
+
+        This checks all ACTIVE links and recalculates their status using the
+        central calculate_link_status() function. Links may transition to INACTIVE
+        if they have expired, reached max uses, or are no longer within their active window.
+        """
+        from app.utils.link_status import calculate_link_status
+
         now = datetime.now()
 
-        # Find links that should be inactive (expired)
-        query = select(AccessLink).filter(
-            AccessLink.status == LinkStatus.ACTIVE,
-            AccessLink.expiration <= now,
-        )
+        # Find all ACTIVE links that might need status updates
+        # (expired, not yet active, or max uses exceeded)
+        query = select(AccessLink).filter(AccessLink.status == LinkStatus.ACTIVE)
         result = await self.db.execute(query)
-        expired_links = result.scalars().all()
+        active_links = result.scalars().all()
 
-        # Update their status to INACTIVE
-        for link in expired_links:
-            link.status = LinkStatus.INACTIVE
-            link.updated_at = now
+        # Track which links changed status
+        updated_links = []
+
+        # Recalculate status for each link using the central function
+        for link in active_links:
+            original_status = link.status
+            new_status = calculate_link_status(link)
+
+            if new_status != original_status:
+                link.status = new_status
+                link.updated_at = now
+                updated_links.append(link)
 
         await self.db.commit()
 
-        if expired_links:
+        if updated_links:
             logger.info(
-                "Links set to inactive (expired)",
-                count=len(expired_links),
-                link_ids=[link.id for link in expired_links],
+                "Links status updated by scheduled check",
+                count=len(updated_links),
+                link_ids=[link.id for link in updated_links],
             )
 
-        return len(expired_links)
+        return len(updated_links)

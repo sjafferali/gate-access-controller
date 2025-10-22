@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
-import { FiEdit, FiEye, FiCopy, FiTrash2, FiSlash, FiCheck } from 'react-icons/fi'
+import { FiEdit, FiEye, FiCopy, FiTrash2, FiSlash, FiCheck, FiFileText } from 'react-icons/fi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
@@ -159,6 +159,14 @@ export default function LinksList({ links }: LinksListProps) {
                 View
               </Link>
 
+              <Link
+                to={`/logs?linkId=${link.id}`}
+                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
+              >
+                <FiFileText className="mr-1 h-4 w-4" />
+                Logs
+              </Link>
+
               {!link.is_deleted && (
                 <>
                   <Link
@@ -278,6 +286,14 @@ export default function LinksList({ links }: LinksListProps) {
                       title="View details"
                     >
                       <FiEye className="h-5 w-5" />
+                    </Link>
+
+                    <Link
+                      to={`/logs?linkId=${link.id}`}
+                      className="p-1 text-gray-600 hover:text-gray-900"
+                      title="View logs"
+                    >
+                      <FiFileText className="h-5 w-5" />
                     </Link>
 
                     {!link.is_deleted && (
