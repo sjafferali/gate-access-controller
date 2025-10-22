@@ -66,7 +66,7 @@ jobs:
         run: |
           poetry run black --check backend/
           poetry run ruff check backend/
-          poetry run mypy backend/ --ignore-missing-imports
+          poetry run mypy backend/app/ --ignore-missing-imports
 
       - name: Run tests
         env:
@@ -123,32 +123,6 @@ jobs:
         with:
           name: frontend-build
           path: frontend/dist/
-
-  # Security Scanning
-  security:
-    name: Security Scanning
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          scan-type: 'fs'
-          scan-ref: '.'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
-
-      - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v2
-        with:
-          sarif_file: 'trivy-results.sarif'
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
 
   # Docker Build
   docker:

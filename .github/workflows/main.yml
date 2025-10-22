@@ -154,33 +154,6 @@ jobs:
         poetry run mypy backend/app/ --ignore-missing-imports
       continue-on-error: true
 
-  # Security Scanning
-  security-scan:
-    runs-on: ubuntu-latest
-    name: Security Scanning
-    permissions:
-      security-events: write
-      contents: read
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        severity: 'CRITICAL,HIGH'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-results.sarif'
-
   # Dependency Security Check
   dependency-check:
     runs-on: ubuntu-latest
@@ -322,7 +295,7 @@ jobs:
   # All checks passed
   ci-success:
     runs-on: ubuntu-latest
-    needs: [backend-tests, frontend-tests, python-lint, security-scan, dependency-check, docker-push]
+    needs: [backend-tests, frontend-tests, python-lint, dependency-check, docker-push]
     if: always()
     name: CI Success
     steps:

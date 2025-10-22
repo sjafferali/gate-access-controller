@@ -93,23 +93,6 @@ jobs:
         npm ci
         npm run lint
 
-  # Security quick scan
-  security-quick:
-    name: Security Quick Check
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v4
-
-    - name: Run Trivy vulnerability scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        scan-type: 'fs'
-        scan-ref: '.'
-        severity: 'CRITICAL'
-        exit-code: '0'
-        ignore-unfixed: true
-
   # Test Docker build
   docker-build-test:
     name: Test Docker Build

@@ -19,7 +19,6 @@ The project uses three main GitHub Actions workflows:
 
 3. **`security.yml`** - Weekly security scans
    - CodeQL static analysis
-   - Trivy vulnerability scanning
    - Dependency review
    - Runs weekly on Mondays or on manual trigger
 

@@ -22,7 +22,8 @@ from app.models import *  # noqa: F401,F403 - Import all models
 config = context.config
 
 # Set the database URL from settings
-config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
+if settings.DATABASE_URL:
+    config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 # Interpret the config file for Python logging.
 if config.config_file_name is not None:
@@ -67,7 +68,8 @@ async def run_async_migrations() -> None:
     """In this scenario we need to create an Engine and associate a connection with the context."""
 
     configuration = config.get_section(config.config_ini_section, {})
-    configuration["sqlalchemy.url"] = settings.DATABASE_URL
+    database_url: str = settings.DATABASE_URL or ""
+    configuration["sqlalchemy.url"] = database_url
 
     connectable = async_engine_from_config(
         configuration,

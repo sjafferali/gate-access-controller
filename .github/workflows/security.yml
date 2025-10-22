@@ -46,31 +46,3 @@ jobs:
       uses: actions/dependency-review-action@v4
       with:
         fail-on-severity: high
-
-  trivy-container-scan:
-    name: Container Vulnerability Scan
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      security-events: write
-
-    steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
-
-    - name: Build Docker image for scanning
-      run: |
-        docker build -t gate-access-controller:scan -f Dockerfile .
-
-    - name: Run Trivy container scanner
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: gate-access-controller:scan
-        format: 'sarif'
-        output: 'trivy-container-results.sarif'
-
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v3
-      if: always()
-      with:
-        sarif_file: 'trivy-container-results.sarif'

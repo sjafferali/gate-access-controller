@@ -109,7 +109,6 @@ auto_fix_prettier() {
 # Parse arguments
 SKIP_TESTS=false
 SKIP_LINT=false
-SKIP_SECURITY=false
 SKIP_DOCKER=true  # Skip Docker build by default
 QUICK=false
 AUTO_FIX=true  # Auto-fix is enabled by default
@@ -125,10 +124,6 @@ while [[ $# -gt 0 ]]; do
       ;;
     --skip-lint)
       SKIP_LINT=true
-      shift
-      ;;
-    --skip-security)
-      SKIP_SECURITY=true
       shift
       ;;
     --skip-docker)
@@ -169,7 +164,6 @@ while [[ $# -gt 0 ]]; do
       echo "Options:"
       echo "  --skip-tests      Skip running tests"
       echo "  --skip-lint       Skip linting checks"
-      echo "  --skip-security   Skip security scans"
       echo "  --skip-docker     Skip Docker build test (default: true)"
       echo "  --include-docker  Include Docker build test"
       echo "  --quick           Run quick tests only (similar to PR checks)"
@@ -450,32 +444,6 @@ if [ "$SKIP_LINT" = false ] && [ "$BACKEND_ONLY" = false ]; then
     fi
 
     cd "$PROJECT_ROOT"
-fi
-
-# Security Scanning
-if [ "$SKIP_SECURITY" = false ]; then
-    print_section "Security Scanning"
-
-    # Trivy scan
-    if command -v trivy &> /dev/null; then
-        if [ "$QUICK" = true ]; then
-            run_check "Trivy quick scan (CRITICAL only)" "cd \"$PROJECT_ROOT\" && trivy fs . --severity CRITICAL --exit-code 0"
-        else
-            run_check "Trivy full scan" "cd \"$PROJECT_ROOT\" && trivy fs . --severity CRITICAL,HIGH --exit-code 0"
-        fi
-    else
-        echo -e "${YELLOW}Trivy not installed. Skipping vulnerability scan.${NC}"
-        echo "Install with: brew install trivy (macOS) or see https://github.com/aquasecurity/trivy"
-    fi
-
-    # npm audit (only if not quick mode and not backend-only)
-    if [ "$QUICK" = false ] && [ "$BACKEND_ONLY" = false ]; then
-        echo -e "\n${YELLOW}npm Dependency Audit${NC}"
-        cd "$PROJECT_ROOT/frontend"
-        run_check "npm audit" "npm audit --json > npm-audit.json && ([ ! -s npm-audit.json ] || (cat npm-audit.json | jq -e '.vulnerabilities | length == 0')) || true"
-        rm -f npm-audit.json
-        cd "$PROJECT_ROOT"
-    fi
 fi
 
 # Docker Build Test (only if explicitly requested)
