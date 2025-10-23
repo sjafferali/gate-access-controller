@@ -1,5 +1,7 @@
 """System Settings schemas for API requests and responses"""
 
+from datetime import datetime
+
 from pydantic import BaseModel, Field
 
 
@@ -28,8 +30,8 @@ class SystemSettingsResponse(SystemSettingsBase):
     """Schema for system settings response"""
 
     id: str
-    created_at: str
-    updated_at: str
+    created_at: datetime
+    updated_at: datetime
 
     class Config:
         from_attributes = True

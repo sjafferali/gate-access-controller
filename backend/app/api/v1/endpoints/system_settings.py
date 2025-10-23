@@ -28,6 +28,9 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
 
         if not settings:
             # Return default settings if none exist yet
+            from datetime import datetime, timezone
+
+            now = datetime.now(timezone.utc)
             default_settings = SystemSettings(
                 webhook_url=None,
                 webhook_token=None,
@@ -42,8 +45,8 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
                 webhook_timeout=default_settings.webhook_timeout,
                 webhook_retries=default_settings.webhook_retries,
                 gate_open_duration_seconds=default_settings.gate_open_duration_seconds,
-                created_at="",
-                updated_at="",
+                created_at=now,
+                updated_at=now,
             )
 
         return SystemSettingsResponse.model_validate(settings)
