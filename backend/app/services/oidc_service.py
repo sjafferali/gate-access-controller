@@ -4,6 +4,7 @@ import secrets
 from datetime import UTC, datetime
 from typing import Any
 
+import httpx
 from authlib.integrations.httpx_client import AsyncOAuth2Client
 from authlib.jose import JoseError, JsonWebToken
 from sqlalchemy import select
@@ -122,7 +123,7 @@ class OIDCService:
         discovery_url = f"{self.issuer}/.well-known/openid-configuration"
 
         try:
-            async with AsyncOAuth2Client() as client:
+            async with httpx.AsyncClient() as client:
                 resp = await client.get(discovery_url)
                 resp.raise_for_status()
                 self._discovery_cache = resp.json()
@@ -148,7 +149,7 @@ class OIDCService:
             raise ValueError("No jwks_uri found in discovery document")
 
         try:
-            async with AsyncOAuth2Client() as client:
+            async with httpx.AsyncClient() as client:
                 resp = await client.get(jwks_uri)
                 resp.raise_for_status()
                 self._jwks_cache = resp.json()
