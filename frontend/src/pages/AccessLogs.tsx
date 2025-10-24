@@ -3,7 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { FiFilter, FiSearch, FiFileText, FiX } from 'react-icons/fi'
-import { accessLogsApi } from '@/services/api'
+import { accessLogsApi, authApi } from '@/services/api'
 import { AccessStatus } from '@/types'
 import Pagination from '@/components/common/Pagination'
 import { useDebounce } from '@/hooks/useDebounce'
@@ -16,6 +16,13 @@ export default function AccessLogs() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<AccessStatus | ''>('')
   const [linkIdFilter, setLinkIdFilter] = useState<string | null>(linkIdFromUrl)
+  const [showMyLinksOnly, setShowMyLinksOnly] = useState(true)
+
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => authApi.getCurrentUser(),
+  })
 
   // Update linkIdFilter when URL parameter changes
   useEffect(() => {
@@ -28,12 +35,12 @@ export default function AccessLogs() {
   // Reset page to 1 when search or filter changes
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, statusFilter, linkIdFilter])
+  }, [debouncedSearch, statusFilter, linkIdFilter, showMyLinksOnly])
 
   const { data, isLoading } = useQuery({
     queryKey: [
       'logs',
-      { page, search: debouncedSearch, status: statusFilter, linkId: linkIdFilter },
+      { page, search: debouncedSearch, status: statusFilter, linkId: linkIdFilter, showMyLinksOnly },
     ],
     queryFn: () =>
       accessLogsApi.list({
@@ -43,7 +50,9 @@ export default function AccessLogs() {
         link_id: linkIdFilter || undefined,
         // Use ip_address for search if it looks like an IP, otherwise leave it for backend to handle
         ip_address: debouncedSearch && debouncedSearch.includes('.') ? debouncedSearch : undefined,
+        owner_user_id: showMyLinksOnly && currentUser ? currentUser.user_id : undefined,
       }),
+    enabled: !!currentUser, // Only run query when we have the current user
   })
 
   const clearLinkFilter = () => {
@@ -110,6 +119,20 @@ export default function AccessLogs() {
               <option value={AccessStatus.DENIED}>DENIED</option>
               <option value={AccessStatus.ERROR}>ERROR</option>
             </select>
+          </div>
+
+          {/* Show My Links Only Checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="show-my-links"
+              checked={showMyLinksOnly}
+              onChange={(e) => setShowMyLinksOnly(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <label htmlFor="show-my-links" className="text-sm text-gray-700">
+              My links only
+            </label>
           </div>
         </div>
 

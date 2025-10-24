@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { FiPlus, FiSearch, FiFilter } from 'react-icons/fi'
-import { accessLinksApi } from '@/services/api'
+import { accessLinksApi, authApi } from '@/services/api'
 import { LinkStatus } from '@/types'
 import LinksList from '@/components/links/LinksList'
 import Pagination from '@/components/common/Pagination'
@@ -14,6 +14,13 @@ export default function AccessLinks() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<LinkStatus | ''>('')
   const [showDeleted, setShowDeleted] = useState(false)
+  const [showMyLinksOnly, setShowMyLinksOnly] = useState(true)
+
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => authApi.getCurrentUser(),
+  })
 
   // Debounce search input to avoid excessive API calls
   const debouncedSearch = useDebounce(search, 300)
@@ -21,10 +28,13 @@ export default function AccessLinks() {
   // Reset page to 1 when search or filter changes
   useEffect(() => {
     setPage(1)
-  }, [debouncedSearch, statusFilter, showDeleted])
+  }, [debouncedSearch, statusFilter, showDeleted, showMyLinksOnly])
 
   const { data, isLoading, error } = useQuery({
-    queryKey: ['links', { page, search: debouncedSearch, status: statusFilter, showDeleted }],
+    queryKey: [
+      'links',
+      { page, search: debouncedSearch, status: statusFilter, showDeleted, showMyLinksOnly },
+    ],
     queryFn: () =>
       accessLinksApi.list({
         page,
@@ -32,7 +42,9 @@ export default function AccessLinks() {
         search: debouncedSearch || undefined,
         status: statusFilter || undefined,
         include_deleted: showDeleted,
+        owner_user_id: showMyLinksOnly && currentUser ? currentUser.user_id : undefined,
       }),
+    enabled: !!currentUser, // Only run query when we have the current user
   })
 
   return (
@@ -82,6 +94,20 @@ export default function AccessLinks() {
               <option value={LinkStatus.INACTIVE}>{formatLinkStatus(LinkStatus.INACTIVE)}</option>
               <option value={LinkStatus.DISABLED}>{formatLinkStatus(LinkStatus.DISABLED)}</option>
             </select>
+          </div>
+
+          {/* Show My Links Only Checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="show-my-links"
+              checked={showMyLinksOnly}
+              onChange={(e) => setShowMyLinksOnly(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+            />
+            <label htmlFor="show-my-links" className="text-sm text-gray-700">
+              My links only
+            </label>
           </div>
 
           {/* Show Deleted Checkbox */}

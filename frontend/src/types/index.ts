@@ -229,3 +229,15 @@ export interface AuditLogStats {
   actions: Record<string, number>
   recent_activity: AuditLog[]
 }
+
+// User Types
+export interface User {
+  sub: string
+  email?: string | null
+  name?: string | null
+  preferred_username?: string | null
+  display_name: string
+  user_id: string
+  is_default_user: boolean
+  is_authenticated: boolean
+}

@@ -26,7 +26,7 @@ export default function Dashboard() {
 
   // Calculate stats
   const activeLinks =
-    linksData?.items.filter((link) => link.status === LinkStatus.ACTIVE).length || 0
+    (linksData?.items || []).filter((link) => link.status === LinkStatus.ACTIVE).length
   const totalLinks = linksData?.total || 0
   const grantedAccess = logsStats?.granted_count || 0
   const deniedAccess = logsStats?.denied_count || 0

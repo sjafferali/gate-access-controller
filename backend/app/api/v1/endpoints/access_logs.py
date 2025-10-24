@@ -10,7 +10,7 @@ from app.api.v1.schemas import (
 )
 from app.core.logging import logger
 from app.db.base import get_db
-from app.models import AccessLog, AccessStatus
+from app.models import AccessLink, AccessLog, AccessStatus
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import and_, desc, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -27,12 +27,18 @@ async def list_access_logs(
     ip_address: str | None = None,
     start_date: datetime | None = None,
     end_date: datetime | None = None,
+    owner_user_id: str | None = Query(None, description="Filter by link owner user ID"),
     db: AsyncSession = Depends(get_db),
 ) -> AccessLogListResponse:
     """List all access logs with pagination and filtering"""
     try:
-        # Build query
-        query = select(AccessLog)
+        # Build query - join with AccessLink if filtering by owner
+        if owner_user_id:
+            query = select(AccessLog).join(
+                AccessLink, AccessLog.link_id == AccessLink.id
+            )
+        else:
+            query = select(AccessLog)
 
         # Apply filters
         filters = []
@@ -46,6 +52,8 @@ async def list_access_logs(
             filters.append(AccessLog.accessed_at >= start_date)
         if end_date:
             filters.append(AccessLog.accessed_at <= end_date)
+        if owner_user_id:
+            filters.append(AccessLink.owner_user_id == owner_user_id)
 
         if filters:
             query = query.filter(and_(*filters))

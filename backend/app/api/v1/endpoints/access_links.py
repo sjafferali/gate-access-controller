@@ -51,6 +51,7 @@ async def list_access_links(
     purpose: str | None = None,
     search: str | None = None,
     include_deleted: bool = Query(False, description="Include soft-deleted links"),
+    owner_user_id: str | None = Query(None, description="Filter by owner user ID"),
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkListResponse:
     """List all access links with pagination and filtering"""
@@ -69,6 +70,8 @@ async def list_access_links(
             filters.append(AccessLink.status == link_status)
         if purpose:
             filters.append(AccessLink.purpose == purpose)
+        if owner_user_id:
+            filters.append(AccessLink.owner_user_id == owner_user_id)
         if search:
             filters.append(
                 or_(

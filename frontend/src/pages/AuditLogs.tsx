@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { auditLogsApi } from '@/services/api'
+import { auditLogsApi, authApi } from '@/services/api'
 import { AuditAction, type AuditLog } from '@/types'
 import { FiCalendar, FiFilter, FiSearch, FiX } from 'react-icons/fi'
 
@@ -12,7 +12,14 @@ export default function AuditLogs() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [showFilters, setShowFilters] = useState(false)
+  const [showMyActionsOnly, setShowMyActionsOnly] = useState(true)
   const pageSize = 50
+
+  // Fetch current user
+  const { data: currentUser } = useQuery({
+    queryKey: ['currentUser'],
+    queryFn: () => authApi.getCurrentUser(),
+  })
 
   // Fetch audit logs
   const { data, isLoading, error } = useQuery({
@@ -24,6 +31,7 @@ export default function AuditLogs() {
       ipFilter,
       startDate,
       endDate,
+      showMyActionsOnly,
     ],
     queryFn: () =>
       auditLogsApi.list({
@@ -34,7 +42,9 @@ export default function AuditLogs() {
         ip_address: ipFilter || undefined,
         start_date: startDate || undefined,
         end_date: endDate || undefined,
+        user_id: showMyActionsOnly && currentUser ? currentUser.user_id : undefined,
       }),
+    enabled: !!currentUser, // Only run query when we have the current user
   })
 
   const handleClearFilters = () => {
@@ -43,11 +53,12 @@ export default function AuditLogs() {
     setIpFilter('')
     setStartDate('')
     setEndDate('')
+    setShowMyActionsOnly(true)
     setPage(1)
   }
 
   const hasActiveFilters =
-    search || actionFilter || ipFilter || startDate || endDate
+    search || actionFilter || ipFilter || startDate || endDate || !showMyActionsOnly
 
   const formatDateTime = (dateString: string) => {
     const date = new Date(dateString)
@@ -148,31 +159,49 @@ export default function AuditLogs() {
 
         {/* Expanded Filters */}
         {showFilters && (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-            {/* Action Filter */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Action
-              </label>
-              <select
-                value={actionFilter}
+          <div className="space-y-4 pt-4 border-t">
+            {/* My Actions Only Checkbox */}
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="show-my-actions"
+                checked={showMyActionsOnly}
                 onChange={(e) => {
-                  setActionFilter(e.target.value)
+                  setShowMyActionsOnly(e.target.checked)
                   setPage(1)
                 }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              >
-                <option value="">All Actions</option>
-                <option value={AuditAction.LINK_CREATED}>Link Created</option>
-                <option value={AuditAction.LINK_UPDATED}>Link Updated</option>
-                <option value={AuditAction.LINK_DELETED}>Link Deleted</option>
-                <option value={AuditAction.LINK_DISABLED}>Link Disabled</option>
-                <option value={AuditAction.LINK_ENABLED}>Link Enabled</option>
-                <option value={AuditAction.LINK_CODE_REGENERATED}>
-                  Code Regenerated
-                </option>
-              </select>
+                className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="show-my-actions" className="text-sm text-gray-700">
+                My actions only
+              </label>
             </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              {/* Action Filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Action
+                </label>
+                <select
+                  value={actionFilter}
+                  onChange={(e) => {
+                    setActionFilter(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option value="">All Actions</option>
+                  <option value={AuditAction.LINK_CREATED}>Link Created</option>
+                  <option value={AuditAction.LINK_UPDATED}>Link Updated</option>
+                  <option value={AuditAction.LINK_DELETED}>Link Deleted</option>
+                  <option value={AuditAction.LINK_DISABLED}>Link Disabled</option>
+                  <option value={AuditAction.LINK_ENABLED}>Link Enabled</option>
+                  <option value={AuditAction.LINK_CODE_REGENERATED}>
+                    Code Regenerated
+                  </option>
+                </select>
+              </div>
 
             {/* IP Address Filter */}
             <div>
@@ -211,21 +240,22 @@ export default function AuditLogs() {
             </div>
 
             {/* End Date */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                End Date
-              </label>
-              <div className="relative">
-                <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="datetime-local"
-                  value={endDate}
-                  onChange={(e) => {
-                    setEndDate(e.target.value)
-                    setPage(1)
-                  }}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  End Date
+                </label>
+                <div className="relative">
+                  <FiCalendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="datetime-local"
+                    value={endDate}
+                    onChange={(e) => {
+                      setEndDate(e.target.value)
+                      setPage(1)
+                    }}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
               </div>
             </div>
           </div>

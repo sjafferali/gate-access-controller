@@ -16,6 +16,7 @@ import type {
   HealthResponse,
   SystemSettings,
   SystemSettingsUpdate,
+  User,
 } from '@/types'
 import { LinkPurpose } from '@/types'
 
@@ -70,6 +71,7 @@ export const accessLinksApi = {
     purpose?: string
     search?: string
     include_deleted?: boolean
+    owner_user_id?: string
   }): Promise<PaginatedResponse<AccessLink>> => {
     const { data } = await apiClient.get<PaginatedResponse<AccessLink>>('/v1/links', { params })
     return data
@@ -176,6 +178,7 @@ export const accessLogsApi = {
     ip_address?: string
     start_date?: string
     end_date?: string
+    owner_user_id?: string
   }): Promise<PaginatedResponse<AccessLog>> => {
     const { data } = await apiClient.get<PaginatedResponse<AccessLog>>('/v1/logs', { params })
     return data
@@ -291,6 +294,14 @@ export const auditLogsApi = {
 
   getStats: async (): Promise<AuditLogStats> => {
     const { data } = await apiClient.get<AuditLogStats>('/v1/audit-logs/stats')
+    return data
+  },
+}
+
+// Auth API
+export const authApi = {
+  getCurrentUser: async (): Promise<User> => {
+    const { data } = await apiClient.get<User>('/v1/auth/me')
     return data
   },
 }
