@@ -67,13 +67,17 @@ async def get_auth_status(db: AsyncSession = Depends(get_db)) -> AuthStatusRespo
 
 @router.get("/login-url", response_model=LoginUrlResponse)
 async def get_login_url(
-    redirect_to: str | None = Query(None, description="URL to redirect to after login")
+    redirect_to: str | None = Query(None, description="URL to redirect to after login"),
+    db: AsyncSession = Depends(get_db),
 ) -> LoginUrlResponse:
     """
     Get OIDC login URL
 
     Returns the URL where the user should be redirected to authenticate.
     """
+    # Load OIDC settings from database (refreshes the global service instance)
+    await oidc_service.load_settings_from_db(db)
+
     if not oidc_service.is_enabled():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -100,12 +104,16 @@ async def get_login_url(
 async def auth_callback(
     callback_request: CallbackRequest,
     response: Response,
+    db: AsyncSession = Depends(get_db),
 ) -> UserResponse:
     """
     Handle OIDC callback after user authentication
 
     Exchanges authorization code for tokens and creates user session.
     """
+    # Load OIDC settings from database (refreshes the global service instance)
+    await oidc_service.load_settings_from_db(db)
+
     if not oidc_service.is_enabled():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
