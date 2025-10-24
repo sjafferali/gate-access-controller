@@ -22,10 +22,11 @@ class SystemSettingsBase(BaseModel):
     # URL Settings
     admin_url: str | None = Field(
         None,
-        description="Admin URL for configuration and management interface (e.g., admin.example.com)",
+        description="Admin URL for configuration and management interface. Include protocol (http:// or https://) or defaults to https:// (e.g., https://admin.example.com or admin.example.com)",
     )
     links_url: str | None = Field(
-        None, description="Links URL for public access links (e.g., x.com)"
+        None,
+        description="Links URL for public access links. Include protocol (http:// or https://) or defaults to https:// (e.g., https://x.com or http://localhost:3000)",
     )
 
     # OIDC Settings

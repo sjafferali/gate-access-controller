@@ -471,10 +471,10 @@ export default function Settings() {
                       {...register('adminUrl')}
                       type="text"
                       className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                      placeholder="admin.example.com"
+                      placeholder="https://admin.example.com or admin.example.com"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Domain for admin panel access (with OIDC authentication if enabled)
+                      Domain for admin panel access. Include http:// or https:// to specify protocol (defaults to https://)
                     </p>
                   </div>
 
@@ -490,10 +490,10 @@ export default function Settings() {
                       {...register('linksUrl')}
                       type="text"
                       className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                      placeholder="x.com"
+                      placeholder="https://x.com or http://localhost:3000"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Domain for public access links (always accessible without authentication)
+                      Domain for public access links. Include http:// or https:// to specify protocol (defaults to https://)
                     </p>
                   </div>
                 </div>

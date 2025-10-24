@@ -20,6 +20,7 @@ import { accessLinksApi } from '@/services/api'
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatLinkStatus } from '@/utils/format'
+import { generateLinkUrl } from '@/utils/linkUrl'
 
 interface LinksListProps {
   links: AccessLink[]
@@ -50,8 +51,8 @@ export default function LinksList({ links, currentUser }: LinksListProps) {
   }
 
   const copyLinkUrl = async (linkCode: string) => {
-    const url = `${window.location.origin}/access/${linkCode}`
     try {
+      const url = await generateLinkUrl(linkCode)
       await copyToClipboard(url)
       toast.success('Link URL copied to clipboard')
     } catch (error) {
