@@ -291,6 +291,12 @@ jobs:
       run: |
         docker buildx imagetools inspect ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
 
+    - name: Send webhook notification
+      uses: distributhor/workflow-webhook@v3
+      env:
+        webhook_url: ${{ secrets.WEBHOOK_URL }}
+        webhook_secret: ${{ secrets.WEBHOOK_SECRET }}
+
   # All checks passed
   ci-success:
     runs-on: ubuntu-latest

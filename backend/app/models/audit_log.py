@@ -70,10 +70,10 @@ class AuditLog(Base, BaseModelMixin):
 
     # User fields (for future multi-user support)
     user_id: Mapped[str | None] = mapped_column(
-        String(36),
+        String(512),
         nullable=True,
         index=True,
-        comment="ID of user who performed the action (for future multi-user support)",
+        comment="ID of user who performed the action (OIDC subject, for future multi-user support)",
     )
 
     user_name: Mapped[str | None] = mapped_column(
