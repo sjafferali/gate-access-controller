@@ -23,8 +23,12 @@ class AuditLogResponse(BaseModel):
     user_name: str | None = Field(None, description="Display name of user who performed the action")
     ip_address: str | None = Field(None, description="IP address from which action was performed")
     user_agent: str | None = Field(None, description="User agent string from the request")
-    changes: dict[str, Any] | None = Field(None, description="Changed fields with old and new values")
-    context_data: dict[str, Any] | None = Field(None, description="Additional context about the action")
+    changes: dict[str, Any] | None = Field(
+        None, description="Changed fields with old and new values"
+    )
+    context_data: dict[str, Any] | None = Field(
+        None, description="Additional context about the action"
+    )
     created_at: datetime = Field(..., description="When the action was performed")
     updated_at: datetime = Field(..., description="When the log entry was last updated")
 

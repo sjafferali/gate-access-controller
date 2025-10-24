@@ -30,7 +30,7 @@ export default function AuthCallback() {
         await authApi.callback(code, state)
         sessionStorage.removeItem('oauth_state')
         await refreshUser()
-        navigate('/dashboard')
+        void navigate('/dashboard')
         toast.success('Successfully authenticated')
       } catch (err) {
         console.error('Callback error:', err)
@@ -49,7 +49,9 @@ export default function AuthCallback() {
           <h2 className="text-2xl font-bold text-red-600">Authentication Error</h2>
           <p className="mt-2 text-gray-600">{error}</p>
           <button
-            onClick={() => navigate('/login')}
+            onClick={() => {
+              void navigate('/login')
+            }}
             className="mt-4 rounded-md bg-primary-600 px-4 py-2 text-white hover:bg-primary-700"
           >
             Return to Login

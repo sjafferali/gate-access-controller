@@ -111,9 +111,7 @@ async def get_audit_log_stats(
         total_logs = result.scalar() or 0
 
         # Get count by action type
-        action_query = select(AuditLog.action, func.count(AuditLog.id)).group_by(
-            AuditLog.action
-        )
+        action_query = select(AuditLog.action, func.count(AuditLog.id)).group_by(AuditLog.action)
         result = await db.execute(action_query)
         action_counts = {row[0]: row[1] for row in result.all()}
 
@@ -125,9 +123,7 @@ async def get_audit_log_stats(
         return AuditLogStats(
             total_logs=total_logs,
             actions=action_counts,
-            recent_activity=[
-                AuditLogResponse.model_validate(item) for item in recent_items
-            ],
+            recent_activity=[AuditLogResponse.model_validate(item) for item in recent_items],
         )
 
     except Exception as e:

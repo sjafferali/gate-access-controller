@@ -48,11 +48,10 @@ class Settings(BaseSettings):
     # URL Settings
     ADMIN_URL: str | None = Field(
         default=None,
-        description="Admin URL for configuration and management interface (e.g., admin.example.com)"
+        description="Admin URL for configuration and management interface (e.g., admin.example.com)",
     )
     LINKS_URL: str | None = Field(
-        default=None,
-        description="Links URL for public access links (e.g., x.com)"
+        default=None, description="Links URL for public access links (e.g., x.com)"
     )
 
     # Database Settings
@@ -99,9 +98,11 @@ class Settings(BaseSettings):
     # Session Settings
     SESSION_SECRET_KEY: str = Field(
         default_factory=lambda: secrets.token_urlsafe(32),
-        description="Secret key for session cookies"
+        description="Secret key for session cookies",
     )
-    SESSION_COOKIE_NAME: str = Field(default="gate_access_session", description="Session cookie name")
+    SESSION_COOKIE_NAME: str = Field(
+        default="gate_access_session", description="Session cookie name"
+    )
     SESSION_MAX_AGE: int = Field(default=86400, description="Session max age in seconds (24 hours)")
     SESSION_SECURE: bool = Field(default=False, description="Use secure cookies (HTTPS only)")
     SESSION_HTTPONLY: bool = Field(default=True, description="HTTPOnly cookie flag")

@@ -40,7 +40,13 @@ export default function AccessLogs() {
   const { data, isLoading } = useQuery({
     queryKey: [
       'logs',
-      { page, search: debouncedSearch, status: statusFilter, linkId: linkIdFilter, showMyLinksOnly },
+      {
+        page,
+        search: debouncedSearch,
+        status: statusFilter,
+        linkId: linkIdFilter,
+        showMyLinksOnly,
+      },
     ],
     queryFn: () =>
       accessLogsApi.list({
@@ -175,7 +181,7 @@ export default function AccessLogs() {
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
                         {log.link_name || 'Unknown'}
                       </td>
-                      <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-600">
+                      <td className="whitespace-nowrap px-6 py-4 font-mono text-sm text-gray-600">
                         {log.link_code_used || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">

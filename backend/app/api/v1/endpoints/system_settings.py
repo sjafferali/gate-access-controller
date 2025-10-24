@@ -1,5 +1,6 @@
 """System Settings API endpoints"""
 
+from datetime import UTC
 from typing import Any
 
 from app.api.v1.schemas import MessageResponse, SystemSettingsCreate, SystemSettingsResponse
@@ -28,9 +29,9 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
 
         if not settings:
             # Return default settings if none exist yet
-            from datetime import datetime, timezone
+            from datetime import datetime
 
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             return SystemSettingsResponse(
                 id="default",
                 webhook_url=None,
@@ -51,25 +52,24 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
             )
 
         # Build response with oidc_client_secret_set flag
-        response_dict = {
-            "id": settings.id,
-            "webhook_url": settings.webhook_url,
-            "webhook_token": settings.webhook_token,
-            "webhook_timeout": settings.webhook_timeout,
-            "webhook_retries": settings.webhook_retries,
-            "gate_open_duration_seconds": settings.gate_open_duration_seconds,
-            "admin_url": settings.admin_url,
-            "links_url": settings.links_url,
-            "oidc_enabled": settings.oidc_enabled,
-            "oidc_issuer": settings.oidc_issuer,
-            "oidc_client_id": settings.oidc_client_id,
-            "oidc_redirect_uri": settings.oidc_redirect_uri,
-            "oidc_scopes": settings.oidc_scopes,
-            "oidc_client_secret_set": bool(settings.oidc_client_secret),
-            "created_at": settings.created_at,
-            "updated_at": settings.updated_at,
-        }
-        return SystemSettingsResponse(**response_dict)
+        return SystemSettingsResponse(
+            id=settings.id,
+            webhook_url=settings.webhook_url,
+            webhook_token=settings.webhook_token,
+            webhook_timeout=settings.webhook_timeout,
+            webhook_retries=settings.webhook_retries,
+            gate_open_duration_seconds=settings.gate_open_duration_seconds,
+            admin_url=settings.admin_url,
+            links_url=settings.links_url,
+            oidc_enabled=settings.oidc_enabled,
+            oidc_issuer=settings.oidc_issuer,
+            oidc_client_id=settings.oidc_client_id,
+            oidc_redirect_uri=settings.oidc_redirect_uri,
+            oidc_scopes=settings.oidc_scopes,
+            oidc_client_secret_set=bool(settings.oidc_client_secret),
+            created_at=settings.created_at,
+            updated_at=settings.updated_at,
+        )
 
     except Exception as e:
         logger.error("Error fetching system settings", error=str(e))
@@ -124,25 +124,24 @@ async def save_system_settings(
             await db.refresh(existing_settings)
 
             logger.info("System settings updated successfully")
-            response_dict = {
-                "id": existing_settings.id,
-                "webhook_url": existing_settings.webhook_url,
-                "webhook_token": existing_settings.webhook_token,
-                "webhook_timeout": existing_settings.webhook_timeout,
-                "webhook_retries": existing_settings.webhook_retries,
-                "gate_open_duration_seconds": existing_settings.gate_open_duration_seconds,
-                "admin_url": existing_settings.admin_url,
-                "links_url": existing_settings.links_url,
-                "oidc_enabled": existing_settings.oidc_enabled,
-                "oidc_issuer": existing_settings.oidc_issuer,
-                "oidc_client_id": existing_settings.oidc_client_id,
-                "oidc_redirect_uri": existing_settings.oidc_redirect_uri,
-                "oidc_scopes": existing_settings.oidc_scopes,
-                "oidc_client_secret_set": bool(existing_settings.oidc_client_secret),
-                "created_at": existing_settings.created_at,
-                "updated_at": existing_settings.updated_at,
-            }
-            return SystemSettingsResponse(**response_dict)
+            return SystemSettingsResponse(
+                id=existing_settings.id,
+                webhook_url=existing_settings.webhook_url,
+                webhook_token=existing_settings.webhook_token,
+                webhook_timeout=existing_settings.webhook_timeout,
+                webhook_retries=existing_settings.webhook_retries,
+                gate_open_duration_seconds=existing_settings.gate_open_duration_seconds,
+                admin_url=existing_settings.admin_url,
+                links_url=existing_settings.links_url,
+                oidc_enabled=existing_settings.oidc_enabled,
+                oidc_issuer=existing_settings.oidc_issuer,
+                oidc_client_id=existing_settings.oidc_client_id,
+                oidc_redirect_uri=existing_settings.oidc_redirect_uri,
+                oidc_scopes=existing_settings.oidc_scopes,
+                oidc_client_secret_set=bool(existing_settings.oidc_client_secret),
+                created_at=existing_settings.created_at,
+                updated_at=existing_settings.updated_at,
+            )
         else:
             # Create new settings
             new_settings = SystemSettings(
@@ -169,25 +168,24 @@ async def save_system_settings(
             await db.refresh(new_settings)
 
             logger.info("System settings created successfully")
-            response_dict = {
-                "id": new_settings.id,
-                "webhook_url": new_settings.webhook_url,
-                "webhook_token": new_settings.webhook_token,
-                "webhook_timeout": new_settings.webhook_timeout,
-                "webhook_retries": new_settings.webhook_retries,
-                "gate_open_duration_seconds": new_settings.gate_open_duration_seconds,
-                "admin_url": new_settings.admin_url,
-                "links_url": new_settings.links_url,
-                "oidc_enabled": new_settings.oidc_enabled,
-                "oidc_issuer": new_settings.oidc_issuer,
-                "oidc_client_id": new_settings.oidc_client_id,
-                "oidc_redirect_uri": new_settings.oidc_redirect_uri,
-                "oidc_scopes": new_settings.oidc_scopes,
-                "oidc_client_secret_set": bool(new_settings.oidc_client_secret),
-                "created_at": new_settings.created_at,
-                "updated_at": new_settings.updated_at,
-            }
-            return SystemSettingsResponse(**response_dict)
+            return SystemSettingsResponse(
+                id=new_settings.id,
+                webhook_url=new_settings.webhook_url,
+                webhook_token=new_settings.webhook_token,
+                webhook_timeout=new_settings.webhook_timeout,
+                webhook_retries=new_settings.webhook_retries,
+                gate_open_duration_seconds=new_settings.gate_open_duration_seconds,
+                admin_url=new_settings.admin_url,
+                links_url=new_settings.links_url,
+                oidc_enabled=new_settings.oidc_enabled,
+                oidc_issuer=new_settings.oidc_issuer,
+                oidc_client_id=new_settings.oidc_client_id,
+                oidc_redirect_uri=new_settings.oidc_redirect_uri,
+                oidc_scopes=new_settings.oidc_scopes,
+                oidc_client_secret_set=bool(new_settings.oidc_client_secret),
+                created_at=new_settings.created_at,
+                updated_at=new_settings.updated_at,
+            )
 
     except Exception as e:
         await db.rollback()

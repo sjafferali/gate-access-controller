@@ -10,11 +10,11 @@ export default function Login() {
   useEffect(() => {
     // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
-      navigate('/dashboard')
+      void navigate('/dashboard')
     }
     // If OIDC is not enabled, redirect to dashboard (no auth required)
     if (!isLoading && !oidcEnabled) {
-      navigate('/dashboard')
+      void navigate('/dashboard')
     }
   }, [isAuthenticated, oidcEnabled, isLoading, navigate])
 
@@ -38,9 +38,7 @@ export default function Login() {
             <FiActivity className="h-10 w-10 text-white" />
           </div>
           <h2 className="mt-6 text-3xl font-bold text-gray-900">Gate Access Controller</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Sign in to manage your access links
-          </p>
+          <p className="mt-2 text-sm text-gray-600">Sign in to manage your access links</p>
         </div>
 
         {/* Login Form */}
@@ -51,13 +49,11 @@ export default function Login() {
                 <FiLock className="h-5 w-5 text-blue-600" />
               </div>
               <div className="ml-3">
-                <h3 className="text-sm font-medium text-blue-800">
-                  Authentication Required
-                </h3>
+                <h3 className="text-sm font-medium text-blue-800">Authentication Required</h3>
                 <div className="mt-2 text-sm text-blue-700">
                   <p>
-                    This application requires authentication via OpenID Connect. Click the
-                    button below to sign in with your identity provider.
+                    This application requires authentication via OpenID Connect. Click the button
+                    below to sign in with your identity provider.
                   </p>
                 </div>
               </div>

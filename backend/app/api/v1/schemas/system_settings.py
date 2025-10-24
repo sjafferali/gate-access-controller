@@ -21,7 +21,8 @@ class SystemSettingsBase(BaseModel):
 
     # URL Settings
     admin_url: str | None = Field(
-        None, description="Admin URL for configuration and management interface (e.g., admin.example.com)"
+        None,
+        description="Admin URL for configuration and management interface (e.g., admin.example.com)",
     )
     links_url: str | None = Field(
         None, description="Links URL for public access links (e.g., x.com)"

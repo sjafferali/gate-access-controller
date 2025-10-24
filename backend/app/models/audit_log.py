@@ -1,7 +1,6 @@
 """Audit log model for tracking changes to access links"""
 
 import enum
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import JSON, String, Text

@@ -1,11 +1,4 @@
-import {
-  createContext,
-  useContext,
-  useEffect,
-  useState,
-  ReactNode,
-  useCallback,
-} from 'react'
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react'
 import { authApi } from '@/services/api'
 import type { User } from '@/types'
 import { useNavigate } from 'react-router-dom'
@@ -76,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await authApi.logout()
       setUser(null)
       toast.success('Logged out successfully')
-      navigate('/login')
+      void navigate('/login')
     } catch (error) {
       console.error('Failed to logout:', error)
       toast.error('Failed to logout')
@@ -102,6 +95,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuth() {
   const context = useContext(AuthContext)
   if (context === undefined) {

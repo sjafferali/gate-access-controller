@@ -1,7 +1,17 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
-import { FiEdit, FiEye, FiCopy, FiTrash2, FiSlash, FiCheck, FiFileText, FiUser, FiUsers } from 'react-icons/fi'
+import {
+  FiEdit,
+  FiEye,
+  FiCopy,
+  FiTrash2,
+  FiSlash,
+  FiCheck,
+  FiFileText,
+  FiUser,
+  FiUsers,
+} from 'react-icons/fi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
@@ -120,7 +130,9 @@ export default function LinksList({ links, currentUser }: LinksListProps) {
                   <div className="flex items-center space-x-2">
                     <h3 className="truncate text-base font-semibold text-gray-900">
                       {link.name}
-                      {link.is_deleted && <span className="ml-2 text-xs text-red-600">(Deleted)</span>}
+                      {link.is_deleted && (
+                        <span className="ml-2 text-xs text-red-600">(Deleted)</span>
+                      )}
                     </h3>
                     {isOwned ? (
                       <span className="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-800">
@@ -146,91 +158,91 @@ export default function LinksList({ links, currentUser }: LinksListProps) {
                 </span>
               </div>
 
-            <div className="mb-3 space-y-2 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Code:</span>
-                <div className="flex items-center space-x-2">
-                  <code className="font-mono text-gray-900">{link.link_code}</code>
-                  <button
-                    onClick={() => void copyLinkUrl(link.link_code)}
-                    className="p-1 text-gray-400 hover:text-gray-600"
-                  >
-                    <FiCopy className="h-4 w-4" />
-                  </button>
+              <div className="mb-3 space-y-2 text-sm">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Code:</span>
+                  <div className="flex items-center space-x-2">
+                    <code className="font-mono text-gray-900">{link.link_code}</code>
+                    <button
+                      onClick={() => void copyLinkUrl(link.link_code)}
+                      className="p-1 text-gray-400 hover:text-gray-600"
+                    >
+                      <FiCopy className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Usage:</span>
+                  <span className="text-gray-900">
+                    {link.granted_count}/{link.max_uses || '∞'}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-500">Expires:</span>
+                  <span className="text-gray-900">
+                    {link.expiration ? format(new Date(link.expiration), 'MMM d, yyyy') : 'Never'}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Usage:</span>
-                <span className="text-gray-900">
-                  {link.granted_count}/{link.max_uses || '∞'}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-gray-500">Expires:</span>
-                <span className="text-gray-900">
-                  {link.expiration ? format(new Date(link.expiration), 'MMM d, yyyy') : 'Never'}
-                </span>
+
+              <div className="flex items-center justify-end space-x-3 border-t border-gray-200 pt-3">
+                <Link
+                  to={`/links/${link.id}`}
+                  className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-900"
+                >
+                  <FiEye className="mr-1 h-4 w-4" />
+                  View
+                </Link>
+
+                <Link
+                  to={`/logs?linkId=${link.id}`}
+                  className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
+                >
+                  <FiFileText className="mr-1 h-4 w-4" />
+                  Logs
+                </Link>
+
+                {!link.is_deleted && (
+                  <>
+                    <Link
+                      to={`/links/${link.id}/edit`}
+                      className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-900"
+                    >
+                      <FiEdit className="mr-1 h-4 w-4" />
+                      Edit
+                    </Link>
+
+                    {link.status === LinkStatus.DISABLED ? (
+                      <button
+                        onClick={() => enableMutation.mutate(link.id)}
+                        className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-900"
+                      >
+                        <FiCheck className="mr-1 h-4 w-4" />
+                        Enable
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => disableMutation.mutate(link.id)}
+                        className="inline-flex items-center text-sm font-medium text-yellow-600 hover:text-yellow-900"
+                      >
+                        <FiSlash className="mr-1 h-4 w-4" />
+                        Disable
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => handleDeleteClick(link)}
+                      className="inline-flex items-center text-sm font-medium text-red-600 hover:text-red-900"
+                    >
+                      <FiTrash2 className="mr-1 h-4 w-4" />
+                      Delete
+                    </button>
+                  </>
+                )}
               </div>
             </div>
-
-            <div className="flex items-center justify-end space-x-3 border-t border-gray-200 pt-3">
-              <Link
-                to={`/links/${link.id}`}
-                className="inline-flex items-center text-sm font-medium text-primary-600 hover:text-primary-900"
-              >
-                <FiEye className="mr-1 h-4 w-4" />
-                View
-              </Link>
-
-              <Link
-                to={`/logs?linkId=${link.id}`}
-                className="inline-flex items-center text-sm font-medium text-gray-600 hover:text-gray-900"
-              >
-                <FiFileText className="mr-1 h-4 w-4" />
-                Logs
-              </Link>
-
-              {!link.is_deleted && (
-                <>
-                  <Link
-                    to={`/links/${link.id}/edit`}
-                    className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-900"
-                  >
-                    <FiEdit className="mr-1 h-4 w-4" />
-                    Edit
-                  </Link>
-
-                  {link.status === LinkStatus.DISABLED ? (
-                    <button
-                      onClick={() => enableMutation.mutate(link.id)}
-                      className="inline-flex items-center text-sm font-medium text-green-600 hover:text-green-900"
-                    >
-                      <FiCheck className="mr-1 h-4 w-4" />
-                      Enable
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => disableMutation.mutate(link.id)}
-                      className="inline-flex items-center text-sm font-medium text-yellow-600 hover:text-yellow-900"
-                    >
-                      <FiSlash className="mr-1 h-4 w-4" />
-                      Disable
-                    </button>
-                  )}
-
-                  <button
-                    onClick={() => handleDeleteClick(link)}
-                    className="inline-flex items-center text-sm font-medium text-red-600 hover:text-red-900"
-                  >
-                    <FiTrash2 className="mr-1 h-4 w-4" />
-                    Delete
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-        )
-      })}
+          )
+        })}
       </div>
 
       {/* Desktop Table View */}
@@ -300,92 +312,92 @@ export default function LinksList({ links, currentUser }: LinksListProps) {
                     )}
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">
-                  <div className="flex items-center space-x-2">
-                    <code className="font-mono text-sm text-gray-900">{link.link_code}</code>
-                    <button
-                      onClick={() => void copyLinkUrl(link.link_code)}
-                      className="p-1 text-gray-400 hover:text-gray-600"
+                    <div className="flex items-center space-x-2">
+                      <code className="font-mono text-sm text-gray-900">{link.link_code}</code>
+                      <button
+                        onClick={() => void copyLinkUrl(link.link_code)}
+                        className="p-1 text-gray-400 hover:text-gray-600"
+                      >
+                        <FiCopy className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <span
+                      className={clsx(
+                        'inline-flex rounded-full px-2 text-xs font-semibold leading-5',
+                        statusColors[link.status]
+                      )}
                     >
-                      <FiCopy className="h-4 w-4" />
-                    </button>
-                  </div>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">
-                  <span
-                    className={clsx(
-                      'inline-flex rounded-full px-2 text-xs font-semibold leading-5',
-                      statusColors[link.status]
-                    )}
-                  >
-                    {formatLinkStatus(link.status)}
-                  </span>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                  {link.granted_count}/{link.max_uses || '∞'}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
-                  {link.expiration ? format(new Date(link.expiration), 'MMM d, yyyy') : 'Never'}
-                </td>
-                <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
-                  <div className="flex items-center justify-end space-x-3">
-                    <Link
-                      to={`/links/${link.id}`}
-                      className="p-1 text-primary-600 hover:text-primary-900"
-                      title="View details"
-                    >
-                      <FiEye className="h-5 w-5" />
-                    </Link>
+                      {formatLinkStatus(link.status)}
+                    </span>
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
+                    {link.granted_count}/{link.max_uses || '∞'}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-500">
+                    {link.expiration ? format(new Date(link.expiration), 'MMM d, yyyy') : 'Never'}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4 text-right text-sm font-medium">
+                    <div className="flex items-center justify-end space-x-3">
+                      <Link
+                        to={`/links/${link.id}`}
+                        className="p-1 text-primary-600 hover:text-primary-900"
+                        title="View details"
+                      >
+                        <FiEye className="h-5 w-5" />
+                      </Link>
 
-                    <Link
-                      to={`/logs?linkId=${link.id}`}
-                      className="p-1 text-gray-600 hover:text-gray-900"
-                      title="View logs"
-                    >
-                      <FiFileText className="h-5 w-5" />
-                    </Link>
+                      <Link
+                        to={`/logs?linkId=${link.id}`}
+                        className="p-1 text-gray-600 hover:text-gray-900"
+                        title="View logs"
+                      >
+                        <FiFileText className="h-5 w-5" />
+                      </Link>
 
-                    {!link.is_deleted && (
-                      <>
-                        <Link
-                          to={`/links/${link.id}/edit`}
-                          className="p-1 text-blue-600 hover:text-blue-900"
-                          title="Edit link"
-                        >
-                          <FiEdit className="h-5 w-5" />
-                        </Link>
-
-                        {link.status === LinkStatus.DISABLED ? (
-                          <button
-                            onClick={() => enableMutation.mutate(link.id)}
-                            className="p-1 text-green-600 hover:text-green-900"
-                            title="Enable link"
+                      {!link.is_deleted && (
+                        <>
+                          <Link
+                            to={`/links/${link.id}/edit`}
+                            className="p-1 text-blue-600 hover:text-blue-900"
+                            title="Edit link"
                           >
-                            <FiCheck className="h-5 w-5" />
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => disableMutation.mutate(link.id)}
-                            className="p-1 text-yellow-600 hover:text-yellow-900"
-                            title="Disable link"
-                          >
-                            <FiSlash className="h-5 w-5" />
-                          </button>
-                        )}
+                            <FiEdit className="h-5 w-5" />
+                          </Link>
 
-                        <button
-                          onClick={() => handleDeleteClick(link)}
-                          className="p-1 text-red-600 hover:text-red-900"
-                          title="Delete link"
-                        >
-                          <FiTrash2 className="h-5 w-5" />
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </td>
-              </tr>
-            )
-          })}
+                          {link.status === LinkStatus.DISABLED ? (
+                            <button
+                              onClick={() => enableMutation.mutate(link.id)}
+                              className="p-1 text-green-600 hover:text-green-900"
+                              title="Enable link"
+                            >
+                              <FiCheck className="h-5 w-5" />
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => disableMutation.mutate(link.id)}
+                              className="p-1 text-yellow-600 hover:text-yellow-900"
+                              title="Disable link"
+                            >
+                              <FiSlash className="h-5 w-5" />
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => handleDeleteClick(link)}
+                            className="p-1 text-red-600 hover:text-red-900"
+                            title="Delete link"
+                          >
+                            <FiTrash2 className="h-5 w-5" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              )
+            })}
           </tbody>
         </table>
       </div>

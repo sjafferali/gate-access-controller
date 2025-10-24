@@ -1,6 +1,7 @@
 """System Settings model for storing application configuration"""
 
 import base64
+
 from cryptography.fernet import Fernet
 from sqlalchemy import Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
@@ -95,7 +96,7 @@ class SystemSettings(Base, BaseModelMixin):
     def _get_cipher() -> Fernet:
         """Get Fernet cipher for encryption/decryption using app SECRET_KEY"""
         # Derive a proper Fernet key from SECRET_KEY
-        key = base64.urlsafe_b64encode(settings.SECRET_KEY.encode()[:32].ljust(32, b'\0'))
+        key = base64.urlsafe_b64encode(settings.SECRET_KEY.encode()[:32].ljust(32, b"\0"))
         return Fernet(key)
 
     def set_oidc_client_secret(self, secret: str | None) -> None:

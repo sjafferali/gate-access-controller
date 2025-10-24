@@ -10,13 +10,13 @@ class User(BaseModel):
     """User model representing an authenticated user"""
 
     sub: str = Field(..., description="Subject identifier (unique user ID from OIDC)")
-    email: str | None = Field(None, description="User email address")
-    name: str | None = Field(None, description="User's full name")
-    preferred_username: str | None = Field(None, description="User's preferred username")
-    iss: str | None = Field(None, description="Issuer identifier (OIDC provider)")
-    aud: str | None = Field(None, description="Audience (client_id)")
-    exp: datetime | None = Field(None, description="Token expiration time")
-    iat: datetime | None = Field(None, description="Token issued at time")
+    email: str | None = Field(default=None, description="User email address")
+    name: str | None = Field(default=None, description="User's full name")
+    preferred_username: str | None = Field(default=None, description="User's preferred username")
+    iss: str | None = Field(default=None, description="Issuer identifier (OIDC provider)")
+    aud: str | None = Field(default=None, description="Audience (client_id)")
+    exp: datetime | None = Field(default=None, description="Token expiration time")
+    iat: datetime | None = Field(default=None, description="Token issued at time")
     is_default_user: bool = Field(
         default=False, description="Whether this is the default user (no auth configured)"
     )

@@ -34,9 +34,7 @@ async def list_access_logs(
     try:
         # Build query - join with AccessLink if filtering by owner
         if owner_user_id:
-            query = select(AccessLog).join(
-                AccessLink, AccessLog.link_id == AccessLink.id
-            )
+            query = select(AccessLog).join(AccessLink, AccessLog.link_id == AccessLink.id)
         else:
             query = select(AccessLog)
 

@@ -10,7 +10,7 @@ export default function ProtectedLayout() {
   useEffect(() => {
     // If OIDC is enabled and user is not authenticated, redirect to login
     if (!isLoading && oidcEnabled && !isAuthenticated) {
-      navigate('/login')
+      void navigate('/login')
     }
   }, [isAuthenticated, oidcEnabled, isLoading, navigate])
 

@@ -1,17 +1,18 @@
 """Custom middleware for request handling"""
 
-from fastapi import Request
-from starlette.middleware.base import BaseHTTPMiddleware
 from app.core.config import settings
 from app.db.base import get_db
 from app.models.system_settings import SystemSettings
+from fastapi import Request
 from sqlalchemy import select
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
+from starlette.responses import Response
 
 
 class URLContextMiddleware(BaseHTTPMiddleware):
     """Middleware to detect admin vs links URL context"""
 
-    async def dispatch(self, request: Request, call_next):
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         """
         Detect if request is for admin or links URL and store in request.state
 

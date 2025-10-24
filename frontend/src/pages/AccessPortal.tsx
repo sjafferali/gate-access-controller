@@ -108,8 +108,8 @@ export default function AccessPortal() {
             <div className="mb-6 text-center">
               <p className="mb-4 text-base text-gray-700 sm:text-lg">
                 {data.is_valid
-                  ? "Click the button below to open the gate."
-                  : "This access link cannot be used at this time."}
+                  ? 'Click the button below to open the gate.'
+                  : 'This access link cannot be used at this time.'}
               </p>
               <div>
                 <span

@@ -5,8 +5,7 @@ from datetime import UTC, datetime
 from typing import Any
 
 from authlib.integrations.httpx_client import AsyncOAuth2Client
-from authlib.jose import JsonWebToken, JoseError
-from authlib.oidc.core import CodeIDToken
+from authlib.jose import JoseError, JsonWebToken
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -19,7 +18,7 @@ from app.models.user import User
 class OIDCService:
     """Service for handling OpenID Connect authentication"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize OIDC service with environment variable defaults"""
         # Start with environment variables (will be overridden by DB settings)
         self.enabled = settings.OIDC_ENABLED
@@ -57,7 +56,7 @@ class OIDCService:
                     self.redirect_uri = system_settings.oidc_redirect_uri
                 if system_settings.oidc_scopes:
                     # Parse comma-separated scopes
-                    self.scopes = [s.strip() for s in system_settings.oidc_scopes.split(',')]
+                    self.scopes = [s.strip() for s in system_settings.oidc_scopes.split(",")]
 
                 # Clear caches when settings are reloaded
                 self._discovery_cache = None
@@ -80,9 +79,7 @@ class OIDCService:
             return False
 
         if not all([self.issuer, self.client_id, self.client_secret, self.redirect_uri]):
-            logger.warning(
-                "OIDC enabled but not fully configured. Missing required settings."
-            )
+            logger.warning("OIDC enabled but not fully configured. Missing required settings.")
             return False
 
         return True
@@ -205,7 +202,7 @@ class OIDCService:
                 )
 
                 logger.info("Successfully exchanged code for tokens")
-                return token_response
+                return dict(token_response)
         except Exception as e:
             logger.error("Failed to exchange code for token", error=str(e))
             raise ValueError(f"Failed to exchange code for token: {e}") from e
@@ -277,14 +274,12 @@ class OIDCService:
                 resp.raise_for_status()
                 userinfo = resp.json()
                 logger.info("Fetched user info", sub=userinfo.get("sub"))
-                return userinfo
+                return dict(userinfo)
         except Exception as e:
             logger.error("Failed to fetch user info", error=str(e))
             raise ValueError(f"Failed to fetch user info: {e}") from e
 
-    async def create_user_from_tokens(
-        self, id_token: str, access_token: str | None = None
-    ) -> User:
+    async def create_user_from_tokens(self, id_token: str, access_token: str | None = None) -> User:
         """
         Create User object from ID token and optionally fetch additional userinfo
 

@@ -1,12 +1,11 @@
 """Authentication endpoints for OpenID Connect"""
 
-from fastapi import APIRouter, HTTPException, Query, Response, status
-from pydantic import BaseModel, Field
-
 from app.core.auth import CurrentUser, OptionalUser, session_service
 from app.core.config import settings
 from app.core.logging import logger
 from app.services.oidc_service import oidc_service
+from fastapi import APIRouter, HTTPException, Query, Response, status
+from pydantic import BaseModel, Field
 
 router = APIRouter()
 

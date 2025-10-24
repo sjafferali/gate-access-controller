@@ -423,9 +423,7 @@ export default function Settings() {
                         <FiAlertCircle className="h-5 w-5 text-blue-400" />
                       </div>
                       <div className="ml-3">
-                        <h3 className="text-sm font-medium text-blue-800">
-                          URL Separation
-                        </h3>
+                        <h3 className="text-sm font-medium text-blue-800">URL Separation</h3>
                         <div className="mt-2 text-sm text-blue-700">
                           <p>
                             Configure separate URLs for admin management and public link access.
@@ -433,8 +431,8 @@ export default function Settings() {
                             The links URL will always remain publicly accessible.
                           </p>
                           <p className="mt-2">
-                            <strong>Example:</strong> admin.example.com for admin panel,
-                            x.com for public links
+                            <strong>Example:</strong> admin.example.com for admin panel, x.com for
+                            public links
                           </p>
                         </div>
                       </div>
@@ -649,7 +647,9 @@ export default function Settings() {
                         </label>
                         <input
                           {...register('oidcIssuer', {
-                            required: oidcEnabled ? 'Issuer URL is required when OIDC is enabled' : false,
+                            required: oidcEnabled
+                              ? 'Issuer URL is required when OIDC is enabled'
+                              : false,
                           })}
                           type="url"
                           className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
@@ -673,14 +673,18 @@ export default function Settings() {
                           </label>
                           <input
                             {...register('oidcClientId', {
-                              required: oidcEnabled ? 'Client ID is required when OIDC is enabled' : false,
+                              required: oidcEnabled
+                                ? 'Client ID is required when OIDC is enabled'
+                                : false,
                             })}
                             type="text"
                             className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
                             placeholder="gate-access-controller"
                           />
                           {errors.oidcClientId && (
-                            <p className="mt-1 text-sm text-red-600">{errors.oidcClientId.message}</p>
+                            <p className="mt-1 text-sm text-red-600">
+                              {errors.oidcClientId.message}
+                            </p>
                           )}
                         </div>
 
@@ -712,7 +716,9 @@ export default function Settings() {
                         </label>
                         <input
                           {...register('oidcRedirectUri', {
-                            required: oidcEnabled ? 'Redirect URI is required when OIDC is enabled' : false,
+                            required: oidcEnabled
+                              ? 'Redirect URI is required when OIDC is enabled'
+                              : false,
                           })}
                           type="url"
                           className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"

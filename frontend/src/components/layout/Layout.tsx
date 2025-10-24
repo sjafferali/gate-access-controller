@@ -179,9 +179,7 @@ export default function Layout() {
                         </span>
                       )}
                     </div>
-                    {user.email && (
-                      <span className="text-xs text-gray-500">{user.email}</span>
-                    )}
+                    {user.email && <span className="text-xs text-gray-500">{user.email}</span>}
                   </div>
                 </div>
               )}

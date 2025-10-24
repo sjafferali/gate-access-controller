@@ -142,7 +142,7 @@ export default function LinkDetails() {
                   href={linkUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary-600 hover:text-primary-700 break-all"
+                  className="break-all text-primary-600 hover:text-primary-700"
                 >
                   {linkUrl}
                 </a>

@@ -1,21 +1,20 @@
 """Authentication and session management"""
 
 import json
-from typing import Annotated
-
-from fastapi import Cookie, Depends, HTTPException, Request, status
-from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
+from typing import Annotated, Any
 
 from app.core.config import settings
 from app.core.logging import logger
 from app.models.user import User
 from app.services.oidc_service import oidc_service
+from fastapi import Cookie, Depends, HTTPException, Request, status
+from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
 
 
 class SessionService:
     """Service for managing user sessions with secure signed cookies"""
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize session service"""
         self.signer = TimestampSigner(settings.SESSION_SECRET_KEY)
         self.cookie_name = settings.SESSION_COOKIE_NAME
@@ -38,7 +37,7 @@ class SessionService:
         user_data = json.dumps(user.to_dict())
 
         # Sign the data
-        signed_data = self.signer.sign(user_data).decode("utf-8")
+        signed_data: str = self.signer.sign(user_data).decode("utf-8")
 
         logger.info("Created session cookie", user_id=user.user_id, sub=user.sub)
         return signed_data
@@ -55,9 +54,7 @@ class SessionService:
         """
         try:
             # Verify signature and check age
-            unsigned_data = self.signer.unsign(
-                cookie_value.encode("utf-8"), max_age=self.max_age
-            )
+            unsigned_data = self.signer.unsign(cookie_value.encode("utf-8"), max_age=self.max_age)
 
             # Deserialize user data
             user_dict = json.loads(unsigned_data.decode("utf-8"))
@@ -75,7 +72,7 @@ class SessionService:
             logger.error("Failed to verify session cookie", error=str(e))
             return None
 
-    def get_cookie_params(self) -> dict:
+    def get_cookie_params(self) -> dict[str, Any]:
         """Get cookie parameters for setting cookies"""
         return {
             "key": self.cookie_name,
@@ -134,9 +131,7 @@ async def get_optional_user(
     return user
 
 
-async def get_current_user(
-    user: Annotated[User | None, Depends(get_optional_user)]
-) -> User:
+async def get_current_user(user: Annotated[User | None, Depends(get_optional_user)]) -> User:
     """
     Get current authenticated user
 
@@ -166,8 +161,7 @@ async def get_current_user(
 
 
 async def require_authentication(
-    request: Request,
-    user: Annotated[User | None, Depends(get_optional_user)]
+    request: Request, user: Annotated[User | None, Depends(get_optional_user)]
 ) -> User:
     """
     Require authentication for endpoint
