@@ -82,7 +82,7 @@ async def get_login_url(
 
     try:
         # Generate authorization URL with state
-        login_url, state = oidc_service.generate_auth_url()
+        login_url, state = await oidc_service.generate_auth_url()
 
         logger.info("Generated login URL", redirect_to=redirect_to)
 

@@ -158,7 +158,7 @@ class OIDCService:
             logger.error("Failed to fetch JWKS", jwks_uri=jwks_uri, error=str(e))
             raise ValueError(f"Failed to fetch JWKS: {e}") from e
 
-    def generate_auth_url(self, state: str | None = None) -> tuple[str, str]:
+    async def generate_auth_url(self, state: str | None = None) -> tuple[str, str]:
         """
         Generate authorization URL for user to authenticate
 
@@ -169,11 +169,8 @@ class OIDCService:
             state = secrets.token_urlsafe(32)
 
         # Build authorization URL manually
-        discovery = None
         try:
-            import asyncio
-
-            discovery = asyncio.run(self.get_discovery_document())
+            discovery = await self.get_discovery_document()
         except Exception as e:
             logger.error("Failed to get discovery document for auth URL", error=str(e))
             raise

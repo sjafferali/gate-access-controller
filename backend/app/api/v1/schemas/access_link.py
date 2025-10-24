@@ -28,6 +28,29 @@ class AccessLinkBase(BaseModel):
 class AccessLinkCreate(AccessLinkBase):
     """Schema for creating a new access link"""
 
+    link_code: str | None = Field(
+        None,
+        description="Optional custom link code (will be auto-generated if not provided)",
+        min_length=4,
+        max_length=20,
+        pattern="^[A-Z0-9]+$",
+    )
+
+    @validator("link_code", pre=True)
+    def uppercase_link_code(cls, v: Any) -> str | None:
+        """Convert link code to uppercase and validate"""
+        if v == "" or v is None:
+            return None
+        if isinstance(v, str):
+            # Convert to uppercase
+            v = v.upper().strip()
+            # Validate format (alphanumeric only)
+            if not v.replace(" ", "").replace("-", "").replace("_", "").isalnum():
+                # Remove non-alphanumeric characters
+                v = "".join(c for c in v if c.isalnum())
+            return v if v else None
+        return v  # type: ignore[return-value]
+
     @validator("expiration", pre=True)
     def empty_str_to_none(cls, v: Any) -> Any | None:
         """Convert empty strings to None for optional expiration field"""

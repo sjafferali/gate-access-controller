@@ -3,7 +3,16 @@ import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
 import { useMutation } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { FiCalendar, FiClock, FiHash, FiFileText, FiTag, FiUser, FiZap } from 'react-icons/fi'
+import {
+  FiCalendar,
+  FiClock,
+  FiHash,
+  FiFileText,
+  FiTag,
+  FiUser,
+  FiZap,
+  FiLink2,
+} from 'react-icons/fi'
 import { accessLinksApi } from '@/services/api'
 import { CreateAccessLink, LinkPurpose } from '@/types'
 import SearchableSelect from '@/components/form/SearchableSelect'
@@ -11,6 +20,7 @@ import SearchableSelect from '@/components/form/SearchableSelect'
 export default function CreateLink() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [useCustomCode, setUseCustomCode] = useState(false)
 
   // Get current date/time in datetime-local format (YYYY-MM-DDTHH:mm)
   const getCurrentDateTime = () => {
@@ -117,6 +127,7 @@ export default function CreateLink() {
       max_uses: data.max_uses || undefined,
       notes: data.notes || undefined,
       auto_open: data.auto_open ?? false,
+      link_code: useCustomCode && data.link_code ? data.link_code.toUpperCase().trim() : undefined,
     }
 
     createMutation.mutate(cleanedData)
@@ -223,6 +234,70 @@ export default function CreateLink() {
               />
               {errors.notes && <p className="mt-1 text-sm text-red-600">{errors.notes.message}</p>}
               <p className="mt-1 text-xs text-gray-500">Optional - Maximum 500 characters</p>
+            </div>
+
+            {/* Custom Link Code Section */}
+            <div className="rounded-md border border-gray-200 bg-gray-50 p-4">
+              <div className="mb-3 flex items-start">
+                <div className="flex h-5 items-center">
+                  <input
+                    type="checkbox"
+                    checked={useCustomCode}
+                    onChange={(e) => setUseCustomCode(e.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                  />
+                </div>
+                <div className="ml-3">
+                  <label className="flex items-center text-sm font-medium text-gray-700">
+                    <FiLink2 className="mr-1 text-blue-500" />
+                    Use Custom Link Code
+                  </label>
+                  <p className="text-xs text-gray-600">
+                    Override the automatically generated code with your own custom code
+                  </p>
+                </div>
+              </div>
+
+              {useCustomCode && (
+                <div className="mt-3">
+                  <input
+                    {...register('link_code', {
+                      required: useCustomCode ? 'Custom link code is required' : false,
+                      minLength: {
+                        value: 4,
+                        message: 'Link code must be at least 4 characters',
+                      },
+                      maxLength: {
+                        value: 20,
+                        message: 'Link code cannot exceed 20 characters',
+                      },
+                      pattern: {
+                        value: /^[A-Za-z0-9]+$/,
+                        message: 'Link code can only contain letters and numbers',
+                      },
+                    })}
+                    type="text"
+                    placeholder="e.g., DELIVERY123 or AMAZON"
+                    onChange={(e) => {
+                      // Convert to uppercase as the user types
+                      e.target.value = e.target.value.toUpperCase()
+                    }}
+                    className={`block w-full rounded-md border ${
+                      errors.link_code
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:border-primary-500 focus:ring-primary-500'
+                    } px-3 py-2.5 font-mono text-sm font-medium uppercase placeholder-gray-400 shadow-sm focus:outline-none focus:ring-1`}
+                  />
+                  {errors.link_code ? (
+                    <p className="mt-1 text-sm text-red-600">{errors.link_code.message}</p>
+                  ) : (
+                    <p className="mt-1 text-xs text-gray-500">
+                      4-20 characters, letters and numbers only (automatically converted to
+                      uppercase)
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

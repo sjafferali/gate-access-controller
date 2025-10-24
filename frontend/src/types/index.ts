@@ -45,6 +45,7 @@ export interface CreateAccessLink {
   expiration?: string
   max_uses?: number
   auto_open?: boolean
+  link_code?: string
 }
 
 export interface UpdateAccessLink {

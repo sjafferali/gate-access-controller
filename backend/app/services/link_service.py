@@ -30,8 +30,15 @@ class LinkService:
         """Create a new access link with a unique code"""
         from app.utils.link_status import calculate_link_status
 
-        # Generate unique link code
-        link_code = await self._generate_unique_code()
+        # Use custom link code if provided, otherwise generate one
+        if link_data.link_code:
+            # Validate that custom code is unique
+            if await self._is_code_taken(link_data.link_code):
+                raise ValueError(f"Link code '{link_data.link_code}' is already in use. Please choose a different code.")
+            link_code = link_data.link_code
+        else:
+            # Generate unique link code
+            link_code = await self._generate_unique_code()
 
         # Set default expiration if not provided
         if not link_data.expiration:
@@ -87,6 +94,13 @@ class LinkService:
 
         return link
 
+    async def _is_code_taken(self, code: str) -> bool:
+        """Check if a link code is already taken"""
+        query = select(AccessLink).filter(AccessLink.link_code == code.upper())
+        result = await self.db.execute(query)
+        existing = result.scalar_one_or_none()
+        return existing is not None
+
     async def _generate_unique_code(self, max_attempts: int = 10) -> str:
         """Generate a unique link code"""
         alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
@@ -95,11 +109,7 @@ class LinkService:
             code: str = generate(alphabet, settings.LINK_CODE_LENGTH)
 
             # Check if code already exists
-            query = select(AccessLink).filter(AccessLink.link_code == code)
-            result = await self.db.execute(query)
-            existing = result.scalar_one_or_none()
-
-            if not existing:
+            if not await self._is_code_taken(code):
                 return code
 
             logger.warning(
