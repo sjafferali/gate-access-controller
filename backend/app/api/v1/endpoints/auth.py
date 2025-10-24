@@ -15,7 +15,7 @@ router = APIRouter()
 class AuthStatusResponse(BaseModel):
     """Response for auth status"""
 
-    enabled: bool = Field(..., description="Whether OIDC authentication is enabled")
+    oidc_enabled: bool = Field(..., description="Whether OIDC authentication is enabled")
     issuer: str | None = Field(None, description="OIDC issuer URL")
     client_id: str | None = Field(None, description="OIDC client ID")
 
@@ -59,7 +59,7 @@ async def get_auth_status(db: AsyncSession = Depends(get_db)) -> AuthStatusRespo
     await oidc_service.load_settings_from_db(db)
 
     return AuthStatusResponse(
-        enabled=oidc_service.is_enabled(),
+        oidc_enabled=oidc_service.is_enabled(),
         issuer=oidc_service.issuer if oidc_service.is_enabled() else None,
         client_id=oidc_service.client_id if oidc_service.is_enabled() else None,
     )

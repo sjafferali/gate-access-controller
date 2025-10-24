@@ -113,6 +113,7 @@ const defaultSettings: SettingsData = {
 export default function Settings() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [activeSection, setActiveSection] = useState('general')
+  const [initialOidcEnabled, setInitialOidcEnabled] = useState<boolean>(false)
 
   const {
     register,
@@ -148,7 +149,7 @@ export default function Settings() {
         }
 
         // Merge settings: localStorage for non-webhook/OIDC settings, API for webhook and OIDC settings
-        reset({
+        const mergedSettings = {
           ...defaultSettings,
           ...localSettings,
           webhookUrl: apiSettings.webhook_url || '',
@@ -162,7 +163,12 @@ export default function Settings() {
           oidcClientSecret: '', // Never populate from API (write-only)
           oidcRedirectUri: apiSettings.oidc_redirect_uri || '',
           oidcScopes: apiSettings.oidc_scopes || 'openid,profile,email',
-        })
+        }
+
+        // Track initial OIDC enabled state
+        setInitialOidcEnabled(apiSettings.oidc_enabled || false)
+
+        reset(mergedSettings)
       } catch (error) {
         console.error('Failed to load settings from API:', error)
         // Fall back to localStorage only
@@ -208,6 +214,9 @@ export default function Settings() {
   const onSubmit = async (data: SettingsData) => {
     setIsSubmitting(true)
 
+    // Check if OIDC enabled state changed
+    const oidcEnabledChanged = data.oidcEnabled !== initialOidcEnabled
+
     try {
       // Save webhook, URL, and OIDC settings to API
       await settingsApi.saveSettings({
@@ -233,7 +242,18 @@ export default function Settings() {
       clearLinkUrlCache()
 
       toast.success('Settings saved successfully')
+
+      // Update initial OIDC state for future comparisons
+      setInitialOidcEnabled(data.oidcEnabled)
       reset(data) // Reset form to mark as not dirty
+
+      // If OIDC enabled state changed, reload the page to refresh authentication state
+      if (oidcEnabledChanged) {
+        toast.success('Authentication settings changed. Reloading page...')
+        setTimeout(() => {
+          window.location.reload()
+        }, 1500)
+      }
     } catch (error) {
       console.error('Failed to save settings:', error)
       toast.error('Failed to save settings')
