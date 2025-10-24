@@ -45,6 +45,18 @@ class SystemSettings(Base, BaseModelMixin):
         comment="Duration to keep gate open in seconds",
     )
 
+    # URL Settings
+    admin_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Admin URL for configuration and management interface (e.g., admin.example.com)",
+    )
+    links_url: Mapped[str | None] = mapped_column(
+        String(500),
+        nullable=True,
+        comment="Links URL for public access links (e.g., x.com)",
+    )
+
     # OIDC Settings
     oidc_enabled: Mapped[bool] = mapped_column(
         Boolean,

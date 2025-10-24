@@ -7,10 +7,13 @@ import { accessLinksApi } from '@/services/api'
 import { LinkStatus } from '@/types'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatLinkStatus } from '@/utils/format'
+import { generateLinkUrl } from '@/utils/linkUrl'
+import { useState, useEffect } from 'react'
 
 export default function LinkDetails() {
   const { linkId } = useParams<{ linkId: string }>()
   const navigate = useNavigate()
+  const [linkUrl, setLinkUrl] = useState<string>('')
 
   const { data: link, isLoading } = useQuery({
     queryKey: ['link', linkId],
@@ -18,11 +21,17 @@ export default function LinkDetails() {
     enabled: !!linkId,
   })
 
-  const copyLinkUrl = async () => {
+  // Generate the link URL when link data is available
+  useEffect(() => {
     if (link) {
-      const url = `${window.location.origin}/access/${link.link_code}`
+      void generateLinkUrl(link.link_code).then(setLinkUrl)
+    }
+  }, [link])
+
+  const copyLinkUrl = async () => {
+    if (link && linkUrl) {
       try {
-        await copyToClipboard(url)
+        await copyToClipboard(linkUrl)
         toast.success('Link URL copied to clipboard')
       } catch (error) {
         console.error('Failed to copy to clipboard:', error)
@@ -128,14 +137,18 @@ export default function LinkDetails() {
           <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
             <dt className="text-sm font-medium text-gray-500">Access URL</dt>
             <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
-              <a
-                href={`/access/${link.link_code}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-700"
-              >
-                {window.location.origin}/access/{link.link_code}
-              </a>
+              {linkUrl ? (
+                <a
+                  href={linkUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-600 hover:text-primary-700 break-all"
+                >
+                  {linkUrl}
+                </a>
+              ) : (
+                <span className="text-gray-400">Loading...</span>
+              )}
             </dd>
           </div>
 

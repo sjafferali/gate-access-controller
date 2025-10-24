@@ -38,6 +38,8 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
                 webhook_timeout=10,
                 webhook_retries=3,
                 gate_open_duration_seconds=5,
+                admin_url=None,
+                links_url=None,
                 oidc_enabled=False,
                 oidc_issuer=None,
                 oidc_client_id=None,
@@ -56,6 +58,8 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
             "webhook_timeout": settings.webhook_timeout,
             "webhook_retries": settings.webhook_retries,
             "gate_open_duration_seconds": settings.gate_open_duration_seconds,
+            "admin_url": settings.admin_url,
+            "links_url": settings.links_url,
             "oidc_enabled": settings.oidc_enabled,
             "oidc_issuer": settings.oidc_issuer,
             "oidc_client_id": settings.oidc_client_id,
@@ -97,6 +101,10 @@ async def save_system_settings(
             existing_settings.webhook_retries = settings_data.webhook_retries
             existing_settings.gate_open_duration_seconds = settings_data.gate_open_duration_seconds
 
+            # Update URL settings
+            existing_settings.admin_url = settings_data.admin_url
+            existing_settings.links_url = settings_data.links_url
+
             # Update OIDC settings
             existing_settings.oidc_enabled = settings_data.oidc_enabled
             existing_settings.oidc_issuer = settings_data.oidc_issuer
@@ -123,6 +131,8 @@ async def save_system_settings(
                 "webhook_timeout": existing_settings.webhook_timeout,
                 "webhook_retries": existing_settings.webhook_retries,
                 "gate_open_duration_seconds": existing_settings.gate_open_duration_seconds,
+                "admin_url": existing_settings.admin_url,
+                "links_url": existing_settings.links_url,
                 "oidc_enabled": existing_settings.oidc_enabled,
                 "oidc_issuer": existing_settings.oidc_issuer,
                 "oidc_client_id": existing_settings.oidc_client_id,
@@ -141,6 +151,8 @@ async def save_system_settings(
                 webhook_timeout=settings_data.webhook_timeout,
                 webhook_retries=settings_data.webhook_retries,
                 gate_open_duration_seconds=settings_data.gate_open_duration_seconds,
+                admin_url=settings_data.admin_url,
+                links_url=settings_data.links_url,
                 oidc_enabled=settings_data.oidc_enabled,
                 oidc_issuer=settings_data.oidc_issuer,
                 oidc_client_id=settings_data.oidc_client_id,
@@ -164,6 +176,8 @@ async def save_system_settings(
                 "webhook_timeout": new_settings.webhook_timeout,
                 "webhook_retries": new_settings.webhook_retries,
                 "gate_open_duration_seconds": new_settings.gate_open_duration_seconds,
+                "admin_url": new_settings.admin_url,
+                "links_url": new_settings.links_url,
                 "oidc_enabled": new_settings.oidc_enabled,
                 "oidc_issuer": new_settings.oidc_issuer,
                 "oidc_client_id": new_settings.oidc_client_id,

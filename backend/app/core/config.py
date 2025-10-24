@@ -45,6 +45,16 @@ class Settings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     PROJECT_NAME: str = "Gate Access Controller API"
 
+    # URL Settings
+    ADMIN_URL: str | None = Field(
+        default=None,
+        description="Admin URL for configuration and management interface (e.g., admin.example.com)"
+    )
+    LINKS_URL: str | None = Field(
+        default=None,
+        description="Links URL for public access links (e.g., x.com)"
+    )
+
     # Database Settings
     DATABASE_TYPE: DatabaseType = DatabaseType.SQLITE
     SQLITE_DATABASE_PATH: str = "./gate_access.db"

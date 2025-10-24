@@ -18,6 +18,7 @@ import {
 } from 'react-icons/fi'
 import SearchableSelect from '@/components/form/SearchableSelect'
 import { settingsApi } from '@/services/api'
+import { clearLinkUrlCache } from '@/utils/linkUrl'
 
 interface SettingsData {
   // General Settings
@@ -25,6 +26,10 @@ interface SettingsData {
   timezone: string
   dateFormat: string
   timeFormat: string
+
+  // URL Configuration
+  adminUrl: string
+  linksUrl: string
 
   // Access Link Defaults
   defaultExpirationHours: number
@@ -66,6 +71,10 @@ const defaultSettings: SettingsData = {
   timezone: 'America/New_York',
   dateFormat: 'MM/DD/YYYY',
   timeFormat: '12h',
+
+  // URL Configuration
+  adminUrl: '',
+  linksUrl: '',
 
   // Access Link Defaults
   defaultExpirationHours: 24,
@@ -145,6 +154,8 @@ export default function Settings() {
           webhookUrl: apiSettings.webhook_url || '',
           webhookTimeout: apiSettings.webhook_timeout * 1000, // Convert seconds to ms for UI
           webhookRetries: apiSettings.webhook_retries,
+          adminUrl: apiSettings.admin_url || '',
+          linksUrl: apiSettings.links_url || '',
           oidcEnabled: apiSettings.oidc_enabled || false,
           oidcIssuer: apiSettings.oidc_issuer || '',
           oidcClientId: apiSettings.oidc_client_id || '',
@@ -198,13 +209,15 @@ export default function Settings() {
     setIsSubmitting(true)
 
     try {
-      // Save webhook and OIDC settings to API
+      // Save webhook, URL, and OIDC settings to API
       await settingsApi.saveSettings({
         webhook_url: data.webhookUrl || null,
         webhook_token: null, // Not exposed in UI yet, could be added later
         webhook_timeout: Math.floor(data.webhookTimeout / 1000), // Convert ms to seconds
         webhook_retries: data.webhookRetries,
         gate_open_duration_seconds: 5, // Default for now
+        admin_url: data.adminUrl || null,
+        links_url: data.linksUrl || null,
         oidc_enabled: data.oidcEnabled,
         oidc_issuer: data.oidcIssuer || null,
         oidc_client_id: data.oidcClientId || null,
@@ -215,6 +228,9 @@ export default function Settings() {
 
       // Save other settings to localStorage
       localStorage.setItem('gateAccessSettings', JSON.stringify(data))
+
+      // Clear the link URL cache so new settings take effect
+      clearLinkUrlCache()
 
       toast.success('Settings saved successfully')
       reset(data) // Reset form to mark as not dirty
@@ -236,6 +252,7 @@ export default function Settings() {
 
   const sections = [
     { id: 'general', name: 'General', icon: FiGlobe },
+    { id: 'urls', name: 'URL Configuration', icon: FiLink },
     { id: 'defaults', name: 'Link Defaults', icon: FiLink },
     { id: 'security', name: 'Security', icon: FiShield },
     { id: 'authentication', name: 'Authentication', icon: FiLock },
@@ -381,6 +398,85 @@ export default function Settings() {
                         )}
                       />
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* URL Configuration */}
+            {activeSection === 'urls' && (
+              <div className="card">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
+                    <FiLink className="mr-2 text-primary-600" />
+                    URL Configuration
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Configure separate URLs for admin panel and public access links
+                  </p>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="rounded-md border border-blue-200 bg-blue-50 p-4">
+                    <div className="flex">
+                      <div className="flex-shrink-0">
+                        <FiAlertCircle className="h-5 w-5 text-blue-400" />
+                      </div>
+                      <div className="ml-3">
+                        <h3 className="text-sm font-medium text-blue-800">
+                          URL Separation
+                        </h3>
+                        <div className="mt-2 text-sm text-blue-700">
+                          <p>
+                            Configure separate URLs for admin management and public link access.
+                            When OIDC is enabled, only the admin URL will require authentication.
+                            The links URL will always remain publicly accessible.
+                          </p>
+                          <p className="mt-2">
+                            <strong>Example:</strong> admin.example.com for admin panel,
+                            x.com for public links
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="adminUrl"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
+                      <FiShield className="mr-1 inline text-gray-500" />
+                      Admin URL
+                    </label>
+                    <input
+                      {...register('adminUrl')}
+                      type="text"
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                      placeholder="admin.example.com"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Domain for admin panel access (with OIDC authentication if enabled)
+                    </p>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="linksUrl"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
+                      <FiGlobe className="mr-1 inline text-gray-500" />
+                      Links URL
+                    </label>
+                    <input
+                      {...register('linksUrl')}
+                      type="text"
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                      placeholder="x.com"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      Domain for public access links (always accessible without authentication)
+                    </p>
                   </div>
                 </div>
               </div>

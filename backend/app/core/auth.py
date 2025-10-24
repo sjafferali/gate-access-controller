@@ -110,6 +110,13 @@ async def get_optional_user(
     Returns:
         User | None: Current user if authenticated, None otherwise
     """
+    # Check if this is a links request (public access)
+    is_links_request = getattr(request.state, "is_links_request", False)
+
+    # Links requests never require authentication
+    if is_links_request:
+        return None
+
     # If OIDC not enabled, return None (will use default user in get_current_user)
     if not oidc_service.is_enabled():
         return None
@@ -159,15 +166,17 @@ async def get_current_user(
 
 
 async def require_authentication(
+    request: Request,
     user: Annotated[User | None, Depends(get_optional_user)]
 ) -> User:
     """
     Require authentication for endpoint
 
-    Raises 401 if OIDC is enabled but user is not authenticated.
-    If OIDC is not enabled, returns default user.
+    Raises 401 if OIDC is enabled and this is an admin request but user is not authenticated.
+    If OIDC is not enabled or this is a links request, returns default user.
 
     Args:
+        request: FastAPI request object
         user: User from optional dependency
 
     Returns:
@@ -179,11 +188,18 @@ async def require_authentication(
     if user:
         return user
 
+    # Check if this is a links request (public access)
+    is_links_request = getattr(request.state, "is_links_request", False)
+
+    # Links requests never require authentication
+    if is_links_request:
+        return User.create_default_user()
+
     # If OIDC not enabled, use default user
     if not oidc_service.is_enabled():
         return User.create_default_user()
 
-    # OIDC enabled but not authenticated - require login
+    # OIDC enabled and this is an admin request but not authenticated - require login
     logger.warning("Authentication required but not provided")
     raise HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,

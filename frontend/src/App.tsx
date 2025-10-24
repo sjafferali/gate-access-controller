@@ -1,4 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
+import { useEffect } from 'react'
 import Layout from '@/components/layout/Layout'
 import Dashboard from '@/pages/Dashboard'
 import AccessLinks from '@/pages/AccessLinks'
@@ -9,8 +10,14 @@ import EditLink from '@/pages/EditLink'
 import LinkDetails from '@/pages/LinkDetails'
 import AccessPortal from '@/pages/AccessPortal'
 import Settings from '@/pages/Settings'
+import { preloadLinkUrlSettings } from '@/utils/linkUrl'
 
 function App() {
+  // Preload link URL settings on app initialization
+  useEffect(() => {
+    void preloadLinkUrlSettings()
+  }, [])
+
   return (
     <Routes>
       {/* Public route for accessing links */}

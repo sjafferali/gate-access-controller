@@ -15,6 +15,7 @@ from sentry_sdk.integrations.starlette import StarletteIntegration
 from app.api.v1.api import api_router
 from app.core.config import settings
 from app.core.logging import logger
+from app.core.middleware import URLContextMiddleware
 from app.core.scheduler import scheduler
 from app.db.base import async_engine, init_async_engine
 
@@ -100,6 +101,9 @@ app.add_middleware(
     TrustedHostMiddleware,
     allowed_hosts=settings.TRUSTED_HOSTS,
 )
+
+# Add URL context middleware to detect admin vs links requests
+app.add_middleware(URLContextMiddleware)
 
 
 # Global exception handler
