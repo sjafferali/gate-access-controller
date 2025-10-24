@@ -7,6 +7,7 @@ from app.api.v1.schemas import MessageResponse, SystemSettingsCreate, SystemSett
 from app.core.logging import logger
 from app.db.base import get_db
 from app.models.system_settings import SystemSettings
+from app.services.oidc_service import oidc_service
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -123,6 +124,9 @@ async def save_system_settings(
             await db.commit()
             await db.refresh(existing_settings)
 
+            # Reload OIDC settings into the global service instance
+            await oidc_service.load_settings_from_db(db)
+
             logger.info("System settings updated successfully")
             return SystemSettingsResponse(
                 id=existing_settings.id,
@@ -166,6 +170,9 @@ async def save_system_settings(
             db.add(new_settings)
             await db.commit()
             await db.refresh(new_settings)
+
+            # Reload OIDC settings into the global service instance
+            await oidc_service.load_settings_from_db(db)
 
             logger.info("System settings created successfully")
             return SystemSettingsResponse(

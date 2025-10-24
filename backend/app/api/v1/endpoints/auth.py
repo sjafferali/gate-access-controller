@@ -3,9 +3,11 @@
 from app.core.auth import CurrentUser, OptionalUser, session_service
 from app.core.config import settings
 from app.core.logging import logger
+from app.db.base import get_db
 from app.services.oidc_service import oidc_service
-from fastapi import APIRouter, HTTPException, Query, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from pydantic import BaseModel, Field
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
 
@@ -46,16 +48,20 @@ class CallbackRequest(BaseModel):
 
 
 @router.get("/status", response_model=AuthStatusResponse)
-async def get_auth_status() -> AuthStatusResponse:
+async def get_auth_status(db: AsyncSession = Depends(get_db)) -> AuthStatusResponse:
     """
     Get authentication status and configuration
 
     Returns information about whether OIDC is enabled and configured.
+    Loads fresh settings from database to ensure they're up-to-date.
     """
+    # Load OIDC settings from database (refreshes the global service instance)
+    await oidc_service.load_settings_from_db(db)
+
     return AuthStatusResponse(
         enabled=oidc_service.is_enabled(),
-        issuer=settings.OIDC_ISSUER if oidc_service.is_enabled() else None,
-        client_id=settings.OIDC_CLIENT_ID if oidc_service.is_enabled() else None,
+        issuer=oidc_service.issuer if oidc_service.is_enabled() else None,
+        client_id=oidc_service.client_id if oidc_service.is_enabled() else None,
     )
 
 
