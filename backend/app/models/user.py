@@ -14,7 +14,9 @@ class User(BaseModel):
     name: str | None = Field(default=None, description="User's full name")
     preferred_username: str | None = Field(default=None, description="User's preferred username")
     iss: str | None = Field(default=None, description="Issuer identifier (OIDC provider)")
-    aud: str | None = Field(default=None, description="Audience (client_id)")
+    aud: str | list[str] | None = Field(
+        default=None, description="Audience (client_id) - can be string or list per OIDC spec"
+    )
     exp: datetime | None = Field(default=None, description="Token expiration time")
     iat: datetime | None = Field(default=None, description="Token issued at time")
     is_default_user: bool = Field(
