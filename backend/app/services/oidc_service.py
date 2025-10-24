@@ -49,9 +49,19 @@ class OIDCService:
                     self.client_id = system_settings.oidc_client_id
                 if system_settings.oidc_client_secret:
                     # Decrypt the client secret
-                    decrypted = system_settings.get_oidc_client_secret()
-                    if decrypted:
-                        self.client_secret = decrypted
+                    try:
+                        decrypted = system_settings.get_oidc_client_secret()
+                        if decrypted:
+                            self.client_secret = decrypted
+                        else:
+                            logger.error(
+                                "Failed to decrypt OIDC client secret - decryption returned None"
+                            )
+                    except Exception as decrypt_error:
+                        logger.error(
+                            "Failed to decrypt OIDC client secret",
+                            error=str(decrypt_error),
+                        )
                 if system_settings.oidc_redirect_uri:
                     self.redirect_uri = system_settings.oidc_redirect_uri
                 if system_settings.oidc_scopes:
@@ -66,6 +76,9 @@ class OIDCService:
                     "Loaded OIDC settings from database",
                     enabled=self.enabled,
                     issuer=self.issuer,
+                    client_id=self.client_id,
+                    client_secret_set=bool(self.client_secret),
+                    redirect_uri=self.redirect_uri,
                 )
         except Exception as e:
             logger.warning(
@@ -78,8 +91,25 @@ class OIDCService:
         if not self.enabled:
             return False
 
-        if not all([self.issuer, self.client_id, self.client_secret, self.redirect_uri]):
-            logger.warning("OIDC enabled but not fully configured. Missing required settings.")
+        missing_fields = []
+        if not self.issuer:
+            missing_fields.append("issuer")
+        if not self.client_id:
+            missing_fields.append("client_id")
+        if not self.client_secret:
+            missing_fields.append("client_secret")
+        if not self.redirect_uri:
+            missing_fields.append("redirect_uri")
+
+        if missing_fields:
+            logger.warning(
+                "OIDC enabled but not fully configured. Missing required settings.",
+                missing_fields=missing_fields,
+                issuer=self.issuer,
+                client_id=self.client_id,
+                client_secret_set=bool(self.client_secret),
+                redirect_uri=self.redirect_uri,
+            )
             return False
 
         return True

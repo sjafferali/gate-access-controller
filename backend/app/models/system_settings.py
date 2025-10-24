@@ -114,6 +114,13 @@ class SystemSettings(Base, BaseModelMixin):
         try:
             cipher = self._get_cipher()
             return cipher.decrypt(self.oidc_client_secret.encode()).decode()
-        except Exception:
-            # If decryption fails, return None
+        except Exception as e:
+            # If decryption fails, log the error and return None
+            from app.core.logging import logger
+
+            logger.error(
+                "Failed to decrypt OIDC client secret. This usually means SECRET_KEY has changed.",
+                error=str(e),
+                error_type=type(e).__name__,
+            )
             return None

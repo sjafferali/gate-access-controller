@@ -90,6 +90,21 @@ async def save_system_settings(
     Only one settings record should exist in the system at a time.
     """
     try:
+        # Validate SECRET_KEY is properly set if OIDC is being enabled
+        from app.core.config import settings as app_settings
+
+        if settings_data.oidc_enabled and settings_data.oidc_client_secret:
+            if (
+                not app_settings.SECRET_KEY
+                or app_settings.SECRET_KEY == "your-secret-key-here-change-in-production"
+            ):
+                raise HTTPException(
+                    status_code=400,
+                    detail="SECRET_KEY must be set to a fixed value before enabling OIDC. "
+                    "Set SECRET_KEY in your .env file to a secure random string. "
+                    "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\"",
+                )
+
         # Check if settings already exist
         result = await db.execute(select(SystemSettings).limit(1))
         existing_settings = result.scalar_one_or_none()
