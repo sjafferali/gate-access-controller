@@ -105,7 +105,7 @@ class AccessLinkResponse(AccessLinkBase):
     is_deleted: bool = False
     deleted_at: datetime | None = None
     owner_user_id: str | None = None
-    owner_user_email: str | None = None
+    owner_user_name: str | None = None
 
     class Config:
         from_attributes = True

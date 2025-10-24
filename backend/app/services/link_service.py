@@ -47,7 +47,7 @@ class LinkService:
             granted_count=0,  # Initialize to 0 (database default)
             denied_count=0,  # Initialize to 0 (database default)
             owner_user_id=user_id,  # Track who created this link
-            owner_user_email=user_email,  # Track who created this link
+            owner_user_name=user_name,  # Track who created this link
             **link_data.model_dump(),
         )
 

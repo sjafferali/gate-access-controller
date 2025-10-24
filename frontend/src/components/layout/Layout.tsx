@@ -9,12 +9,14 @@ import {
   FiX,
   FiZap,
   FiClock,
+  FiUser,
 } from 'react-icons/fi'
 import { useState } from 'react'
 import clsx from 'clsx'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { accessLinksApi } from '@/services/api'
+import { useUser } from '@/hooks/useUser'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
@@ -28,6 +30,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const { data: user } = useUser()
 
   const quickLinkMutation = useMutation({
     mutationFn: async () => accessLinksApi.createQuickLink(),
@@ -125,13 +128,40 @@ export default function Layout() {
       <div className="flex flex-1 flex-col">
         {/* Top header */}
         <header className="bg-white shadow-sm">
-          <div className="flex h-16 items-center px-4">
-            <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
-              <FiMenu className="h-6 w-6 text-gray-500" />
-            </button>
-            <h1 className="ml-4 text-lg font-semibold text-gray-900 lg:ml-0">
-              Gate Access Controller
-            </h1>
+          <div className="flex h-16 items-center justify-between px-4">
+            <div className="flex items-center">
+              <button className="lg:hidden" onClick={() => setSidebarOpen(true)}>
+                <FiMenu className="h-6 w-6 text-gray-500" />
+              </button>
+              <h1 className="ml-4 text-lg font-semibold text-gray-900 lg:ml-0">
+                Gate Access Controller
+              </h1>
+            </div>
+
+            {/* User info */}
+            {user && (
+              <div className="flex items-center space-x-2 rounded-lg bg-gray-100 px-3 py-2">
+                <div
+                  className={clsx(
+                    'flex h-8 w-8 items-center justify-center rounded-full',
+                    user.is_authenticated
+                      ? 'bg-primary-600 text-white'
+                      : 'bg-gray-400 text-white'
+                  )}
+                >
+                  <FiUser className="h-4 w-4" />
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium text-gray-900">{user.display_name}</span>
+                  {user.email && (
+                    <span className="text-xs text-gray-500">{user.email}</span>
+                  )}
+                  {!user.is_authenticated && (
+                    <span className="text-xs text-gray-500">(No auth)</span>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         </header>
 

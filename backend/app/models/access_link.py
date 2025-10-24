@@ -119,10 +119,10 @@ class AccessLink(Base, BaseModelMixin):
         nullable=True,
         comment="User ID of the person who created this link",
     )
-    owner_user_email: Mapped[str | None] = mapped_column(
+    owner_user_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
-        comment="Email address of the person who created this link",
+        comment="Display name of the person who created this link",
     )
 
     # Usage tracking
