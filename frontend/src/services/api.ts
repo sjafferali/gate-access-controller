@@ -301,6 +301,28 @@ export const auditLogsApi = {
 
 // Auth API
 export const authApi = {
+  getStatus: async (): Promise<{ oidc_enabled: boolean }> => {
+    const { data } = await apiClient.get<{ oidc_enabled: boolean }>('/v1/auth/status')
+    return data
+  },
+
+  getLoginUrl: async (): Promise<{ authorization_url: string; state: string }> => {
+    const { data } = await apiClient.get<{ authorization_url: string; state: string }>(
+      '/v1/auth/login-url'
+    )
+    return data
+  },
+
+  callback: async (code: string, state: string): Promise<User> => {
+    const { data } = await apiClient.post<User>('/v1/auth/callback', { code, state })
+    return data
+  },
+
+  logout: async (): Promise<{ message: string }> => {
+    const { data } = await apiClient.post<{ message: string }>('/v1/auth/logout')
+    return data
+  },
+
   getCurrentUser: async (): Promise<User> => {
     const { data } = await apiClient.get<User>('/v1/auth/me')
     return data

@@ -10,13 +10,14 @@ import {
   FiZap,
   FiClock,
   FiUser,
+  FiLogOut,
 } from 'react-icons/fi'
 import { useState } from 'react'
 import clsx from 'clsx'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { accessLinksApi } from '@/services/api'
-import { useUser } from '@/hooks/useUser'
+import { useAuth } from '@/contexts/AuthContext'
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
@@ -30,7 +31,7 @@ export default function Layout() {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const { data: user } = useUser()
+  const { user, logout, oidcEnabled } = useAuth()
 
   const quickLinkMutation = useMutation({
     mutationFn: async () => accessLinksApi.createQuickLink(),
@@ -139,50 +140,64 @@ export default function Layout() {
             </div>
 
             {/* User info */}
-            {user && (
-              <div className="flex items-center space-x-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-2 shadow-sm">
-                {/* Authentication status indicator */}
-                <div className="relative">
-                  <div
-                    className={clsx(
-                      'flex h-10 w-10 items-center justify-center rounded-full',
-                      user.is_authenticated
-                        ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md'
-                        : 'bg-gray-300 text-gray-600'
-                    )}
-                  >
-                    <FiUser className="h-5 w-5" />
-                  </div>
-                  {user.is_authenticated && (
+            <div className="flex items-center space-x-3">
+              {user && (
+                <div className="flex items-center space-x-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-2 shadow-sm">
+                  {/* Authentication status indicator */}
+                  <div className="relative">
                     <div
-                      className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"
-                      title="Authenticated"
-                    />
-                  )}
-                </div>
-
-                {/* User details */}
-                <div className="hidden flex-col sm:flex">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-sm font-semibold text-gray-900">
-                      {user.display_name}
-                    </span>
-                    {user.is_authenticated ? (
-                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
-                        Authenticated
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
-                        Local Mode
-                      </span>
+                      className={clsx(
+                        'flex h-10 w-10 items-center justify-center rounded-full',
+                        user.is_authenticated
+                          ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md'
+                          : 'bg-gray-300 text-gray-600'
+                      )}
+                    >
+                      <FiUser className="h-5 w-5" />
+                    </div>
+                    {user.is_authenticated && (
+                      <div
+                        className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"
+                        title="Authenticated"
+                      />
                     )}
                   </div>
-                  {user.email && (
-                    <span className="text-xs text-gray-500">{user.email}</span>
-                  )}
+
+                  {/* User details */}
+                  <div className="hidden flex-col sm:flex">
+                    <div className="flex items-center space-x-2">
+                      <span className="text-sm font-semibold text-gray-900">
+                        {user.display_name}
+                      </span>
+                      {user.is_authenticated ? (
+                        <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                          Authenticated
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                          Local Mode
+                        </span>
+                      )}
+                    </div>
+                    {user.email && (
+                      <span className="text-xs text-gray-500">{user.email}</span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+
+              {/* Logout button - only show when OIDC is enabled and user is authenticated */}
+              {oidcEnabled && user?.is_authenticated && (
+                <button
+                  onClick={() => void logout()}
+                  className="flex items-center space-x-2 rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm transition-colors hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+                  title="Logout"
+                >
+                  <FiLogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </button>
+              )}
+            </div>
           </div>
         </header>
 

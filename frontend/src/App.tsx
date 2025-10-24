@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect } from 'react'
-import Layout from '@/components/layout/Layout'
+import { AuthProvider } from '@/contexts/AuthContext'
+import ProtectedLayout from '@/components/layout/ProtectedLayout'
 import Dashboard from '@/pages/Dashboard'
 import AccessLinks from '@/pages/AccessLinks'
 import AccessLogs from '@/pages/AccessLogs'
@@ -10,6 +11,8 @@ import EditLink from '@/pages/EditLink'
 import LinkDetails from '@/pages/LinkDetails'
 import AccessPortal from '@/pages/AccessPortal'
 import Settings from '@/pages/Settings'
+import Login from '@/pages/Login'
+import AuthCallback from '@/pages/AuthCallback'
 import { preloadLinkUrlSettings } from '@/utils/linkUrl'
 
 function App() {
@@ -19,23 +22,27 @@ function App() {
   }, [])
 
   return (
-    <Routes>
-      {/* Public route for accessing links */}
-      <Route path="/access/:linkCode" element={<AccessPortal />} />
+    <AuthProvider>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/access/:linkCode" element={<AccessPortal />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
 
-      {/* Admin routes */}
-      <Route path="/" element={<Layout />}>
-        <Route index element={<Navigate to="/dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="links" element={<AccessLinks />} />
-        <Route path="links/new" element={<CreateLink />} />
-        <Route path="links/:linkId/edit" element={<EditLink />} />
-        <Route path="links/:linkId" element={<LinkDetails />} />
-        <Route path="logs" element={<AccessLogs />} />
-        <Route path="audit-logs" element={<AuditLogs />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-    </Routes>
+        {/* Protected admin routes */}
+        <Route path="/" element={<ProtectedLayout />}>
+          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="links" element={<AccessLinks />} />
+          <Route path="links/new" element={<CreateLink />} />
+          <Route path="links/:linkId/edit" element={<EditLink />} />
+          <Route path="links/:linkId" element={<LinkDetails />} />
+          <Route path="logs" element={<AccessLogs />} />
+          <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Routes>
+    </AuthProvider>
   )
 }
 

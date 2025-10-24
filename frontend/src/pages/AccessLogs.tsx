@@ -156,6 +156,9 @@ export default function AccessLogs() {
                       Link
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                      Link Code
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                       Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
@@ -170,7 +173,10 @@ export default function AccessLogs() {
                         {format(new Date(log.accessed_at), 'MMM d, h:mm:ss a')}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4 text-sm text-gray-900">
-                        {log.link_name || log.link_code_used || 'Unknown'}
+                        {log.link_name || 'Unknown'}
+                      </td>
+                      <td className="whitespace-nowrap px-6 py-4 text-sm font-mono text-gray-600">
+                        {log.link_code_used || '-'}
                       </td>
                       <td className="whitespace-nowrap px-6 py-4">
                         <span
