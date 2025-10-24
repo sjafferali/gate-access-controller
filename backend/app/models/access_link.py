@@ -113,6 +113,18 @@ class AccessLink(Base, BaseModelMixin):
         comment="Purpose category for the link",
     )
 
+    # Owner tracking
+    owner_user_id: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="User ID of the person who created this link",
+    )
+    owner_user_email: Mapped[str | None] = mapped_column(
+        String(255),
+        nullable=True,
+        comment="Email address of the person who created this link",
+    )
+
     # Usage tracking
     granted_count: Mapped[int] = mapped_column(
         Integer,

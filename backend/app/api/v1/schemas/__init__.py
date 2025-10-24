@@ -16,6 +16,11 @@ from app.api.v1.schemas.access_log import (
     AccessLogStats,
     AccessLogSummary,
 )
+from app.api.v1.schemas.audit_log import (
+    AuditLogListResponse,
+    AuditLogResponse,
+    AuditLogStats,
+)
 from app.api.v1.schemas.common import (
     ErrorResponse,
     HealthResponse,
@@ -42,6 +47,10 @@ __all__ = [
     "AccessLogFilter",
     "AccessLogStats",
     "AccessLogSummary",
+    # Audit Log schemas
+    "AuditLogResponse",
+    "AuditLogListResponse",
+    "AuditLogStats",
     # Common schemas
     "MessageResponse",
     "ErrorResponse",

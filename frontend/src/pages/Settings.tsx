@@ -13,6 +13,8 @@ import {
   FiLink,
   FiBell,
   FiAlertCircle,
+  FiLock,
+  FiKey,
 } from 'react-icons/fi'
 import SearchableSelect from '@/components/form/SearchableSelect'
 import { settingsApi } from '@/services/api'
@@ -36,6 +38,14 @@ interface SettingsData {
   webhookRetries: number
   ipWhitelist: string
   requireAuthentication: boolean
+
+  // OIDC Authentication Settings
+  oidcEnabled: boolean
+  oidcIssuer: string
+  oidcClientId: string
+  oidcClientSecret: string
+  oidcRedirectUri: string
+  oidcScopes: string
 
   // Notification Settings
   emailNotifications: boolean
@@ -70,6 +80,14 @@ const defaultSettings: SettingsData = {
   ipWhitelist: '',
   requireAuthentication: false,
 
+  // OIDC Authentication
+  oidcEnabled: false,
+  oidcIssuer: '',
+  oidcClientId: '',
+  oidcClientSecret: '',
+  oidcRedirectUri: '',
+  oidcScopes: 'openid,profile,email',
+
   // Notifications
   emailNotifications: false,
   notificationEmail: '',
@@ -100,6 +118,7 @@ export default function Settings() {
 
   const emailNotifications = watch('emailNotifications')
   const autoDeleteExpiredLinks = watch('autoDeleteExpiredLinks')
+  const oidcEnabled = watch('oidcEnabled')
 
   // Load settings from API and localStorage on mount
   useEffect(() => {
@@ -119,13 +138,19 @@ export default function Settings() {
           }
         }
 
-        // Merge settings: localStorage for non-webhook settings, API for webhook settings
+        // Merge settings: localStorage for non-webhook/OIDC settings, API for webhook and OIDC settings
         reset({
           ...defaultSettings,
           ...localSettings,
           webhookUrl: apiSettings.webhook_url || '',
           webhookTimeout: apiSettings.webhook_timeout * 1000, // Convert seconds to ms for UI
           webhookRetries: apiSettings.webhook_retries,
+          oidcEnabled: apiSettings.oidc_enabled || false,
+          oidcIssuer: apiSettings.oidc_issuer || '',
+          oidcClientId: apiSettings.oidc_client_id || '',
+          oidcClientSecret: '', // Never populate from API (write-only)
+          oidcRedirectUri: apiSettings.oidc_redirect_uri || '',
+          oidcScopes: apiSettings.oidc_scopes || 'openid,profile,email',
         })
       } catch (error) {
         console.error('Failed to load settings from API:', error)
@@ -173,13 +198,19 @@ export default function Settings() {
     setIsSubmitting(true)
 
     try {
-      // Save webhook settings to API
+      // Save webhook and OIDC settings to API
       await settingsApi.saveSettings({
         webhook_url: data.webhookUrl || null,
         webhook_token: null, // Not exposed in UI yet, could be added later
         webhook_timeout: Math.floor(data.webhookTimeout / 1000), // Convert ms to seconds
         webhook_retries: data.webhookRetries,
         gate_open_duration_seconds: 5, // Default for now
+        oidc_enabled: data.oidcEnabled,
+        oidc_issuer: data.oidcIssuer || null,
+        oidc_client_id: data.oidcClientId || null,
+        oidc_client_secret: data.oidcClientSecret || null, // Only send if changed
+        oidc_redirect_uri: data.oidcRedirectUri || null,
+        oidc_scopes: data.oidcScopes || null,
       })
 
       // Save other settings to localStorage
@@ -207,6 +238,7 @@ export default function Settings() {
     { id: 'general', name: 'General', icon: FiGlobe },
     { id: 'defaults', name: 'Link Defaults', icon: FiLink },
     { id: 'security', name: 'Security', icon: FiShield },
+    { id: 'authentication', name: 'Authentication', icon: FiLock },
     { id: 'notifications', name: 'Notifications', icon: FiBell },
     { id: 'data', name: 'Data Management', icon: FiDatabase },
   ]
@@ -460,6 +492,165 @@ export default function Settings() {
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+            )}
+
+            {/* Authentication Settings */}
+            {activeSection === 'authentication' && (
+              <div className="card">
+                <div className="mb-6 border-b border-gray-200 pb-4">
+                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
+                    <FiLock className="mr-2 text-primary-600" />
+                    OpenID Connect Authentication
+                  </h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Configure OIDC authentication for admin panel access
+                  </p>
+                </div>
+
+                <div className="space-y-5">
+                  <div className="flex items-center">
+                    <input
+                      {...register('oidcEnabled')}
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label htmlFor="oidcEnabled" className="ml-2 block text-sm text-gray-700">
+                      Enable OpenID Connect Authentication
+                    </label>
+                  </div>
+
+                  {oidcEnabled && (
+                    <>
+                      <div className="rounded-md border border-yellow-200 bg-yellow-50 p-4">
+                        <div className="flex">
+                          <div className="flex-shrink-0">
+                            <FiAlertCircle className="h-5 w-5 text-yellow-400" />
+                          </div>
+                          <div className="ml-3">
+                            <h3 className="text-sm font-medium text-yellow-800">
+                              Important: Authentication Required
+                            </h3>
+                            <div className="mt-2 text-sm text-yellow-700">
+                              <p>
+                                After enabling OIDC, all admin panel access will require
+                                authentication through your identity provider. Make sure to test
+                                your configuration before logging out.
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="oidcIssuer"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          <FiKey className="mr-1 inline text-gray-500" />
+                          OIDC Issuer URL
+                        </label>
+                        <input
+                          {...register('oidcIssuer', {
+                            required: oidcEnabled ? 'Issuer URL is required when OIDC is enabled' : false,
+                          })}
+                          type="url"
+                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                          placeholder="https://auth.example.com"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          The base URL of your OpenID Connect identity provider (e.g., Authelia)
+                        </p>
+                        {errors.oidcIssuer && (
+                          <p className="mt-1 text-sm text-red-600">{errors.oidcIssuer.message}</p>
+                        )}
+                      </div>
+
+                      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+                        <div>
+                          <label
+                            htmlFor="oidcClientId"
+                            className="mb-1 block text-sm font-medium text-gray-700"
+                          >
+                            Client ID
+                          </label>
+                          <input
+                            {...register('oidcClientId', {
+                              required: oidcEnabled ? 'Client ID is required when OIDC is enabled' : false,
+                            })}
+                            type="text"
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                            placeholder="gate-access-controller"
+                          />
+                          {errors.oidcClientId && (
+                            <p className="mt-1 text-sm text-red-600">{errors.oidcClientId.message}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label
+                            htmlFor="oidcClientSecret"
+                            className="mb-1 block text-sm font-medium text-gray-700"
+                          >
+                            Client Secret
+                          </label>
+                          <input
+                            {...register('oidcClientSecret')}
+                            type="password"
+                            className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                            placeholder="••••••••••••••••"
+                          />
+                          <p className="mt-1 text-xs text-gray-500">
+                            Leave blank to keep existing secret
+                          </p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="oidcRedirectUri"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Redirect URI
+                        </label>
+                        <input
+                          {...register('oidcRedirectUri', {
+                            required: oidcEnabled ? 'Redirect URI is required when OIDC is enabled' : false,
+                          })}
+                          type="url"
+                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                          placeholder="http://localhost:3000/auth/callback"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          The callback URL configured in your identity provider
+                        </p>
+                        {errors.oidcRedirectUri && (
+                          <p className="mt-1 text-sm text-red-600">
+                            {errors.oidcRedirectUri.message}
+                          </p>
+                        )}
+                      </div>
+
+                      <div>
+                        <label
+                          htmlFor="oidcScopes"
+                          className="mb-1 block text-sm font-medium text-gray-700"
+                        >
+                          Scopes
+                        </label>
+                        <input
+                          {...register('oidcScopes')}
+                          type="text"
+                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                          placeholder="openid,profile,email"
+                        />
+                        <p className="mt-1 text-xs text-gray-500">
+                          Comma-separated list of OIDC scopes to request
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             )}
@@ -775,8 +966,8 @@ export default function Settings() {
                   <h3 className="text-sm font-medium text-blue-800">Settings Storage</h3>
                   <div className="mt-2 text-sm text-blue-700">
                     <p>
-                      Webhook settings are saved to the server and will apply globally. Other
-                      settings are stored locally in your browser.
+                      Webhook and authentication settings are saved to the server and will apply
+                      globally. Other settings are stored locally in your browser.
                     </p>
                   </div>
                 </div>

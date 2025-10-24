@@ -3,6 +3,8 @@ import toast from 'react-hot-toast'
 import type {
   AccessLink,
   AccessLog,
+  AuditLog,
+  AuditLogStats,
   CreateAccessLink,
   UpdateAccessLink,
   PaginatedResponse,
@@ -259,6 +261,36 @@ export const settingsApi = {
 
   resetSettings: async (): Promise<MessageResponse> => {
     const { data } = await apiClient.delete<MessageResponse>('/v1/settings')
+    return data
+  },
+}
+
+// Audit Logs API
+export const auditLogsApi = {
+  list: async (params?: {
+    page?: number
+    size?: number
+    action?: string
+    resource_type?: string
+    resource_id?: string
+    link_code?: string
+    user_id?: string
+    ip_address?: string
+    search?: string
+    start_date?: string
+    end_date?: string
+  }): Promise<PaginatedResponse<AuditLog>> => {
+    const { data } = await apiClient.get<PaginatedResponse<AuditLog>>('/v1/audit-logs', { params })
+    return data
+  },
+
+  get: async (auditLogId: string): Promise<AuditLog> => {
+    const { data } = await apiClient.get<AuditLog>(`/v1/audit-logs/${auditLogId}`)
+    return data
+  },
+
+  getStats: async (): Promise<AuditLogStats> => {
+    const { data } = await apiClient.get<AuditLogStats>('/v1/audit-logs/stats')
     return data
   },
 }

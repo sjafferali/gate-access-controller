@@ -8,6 +8,7 @@ import {
   FiMenu,
   FiX,
   FiZap,
+  FiClock,
 } from 'react-icons/fi'
 import { useState } from 'react'
 import clsx from 'clsx'
@@ -19,6 +20,7 @@ const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: FiHome },
   { name: 'Access Links', href: '/links', icon: FiLink },
   { name: 'Access Logs', href: '/logs', icon: FiFileText },
+  { name: 'Audit Logs', href: '/audit-logs', icon: FiClock },
   { name: 'Settings', href: '/settings', icon: FiSettings },
 ]
 

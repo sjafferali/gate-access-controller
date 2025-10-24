@@ -69,6 +69,34 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 60
     LINK_CODE_LENGTH: int = 8
 
+    # OpenID Connect / OAuth2 Settings (Optional)
+    OIDC_ENABLED: bool = Field(default=False, description="Enable OpenID Connect authentication")
+    OIDC_ISSUER: str | None = Field(
+        default=None, description="OIDC Issuer URL (e.g., https://auth.example.com)"
+    )
+    OIDC_CLIENT_ID: str | None = Field(default=None, description="OIDC Client ID")
+    OIDC_CLIENT_SECRET: str | None = Field(default=None, description="OIDC Client Secret")
+    OIDC_REDIRECT_URI: str | None = Field(
+        default=None,
+        description="OIDC Redirect URI (e.g., http://localhost:3000/auth/callback)",
+    )
+    OIDC_SCOPES: list[str] = Field(
+        default=["openid", "profile", "email"],
+        description="OIDC Scopes to request",
+    )
+    OIDC_TOKEN_ALGORITHM: str = Field(default="RS256", description="JWT algorithm for ID token")
+
+    # Session Settings
+    SESSION_SECRET_KEY: str = Field(
+        default_factory=lambda: secrets.token_urlsafe(32),
+        description="Secret key for session cookies"
+    )
+    SESSION_COOKIE_NAME: str = Field(default="gate_access_session", description="Session cookie name")
+    SESSION_MAX_AGE: int = Field(default=86400, description="Session max age in seconds (24 hours)")
+    SESSION_SECURE: bool = Field(default=False, description="Use secure cookies (HTTPS only)")
+    SESSION_HTTPONLY: bool = Field(default=True, description="HTTPOnly cookie flag")
+    SESSION_SAMESITE: str = Field(default="lax", description="SameSite cookie attribute")
+
     # Link Settings
     DEFAULT_LINK_EXPIRATION_HOURS: int = 24
     MAX_LINK_USES: int = 100
@@ -95,6 +123,15 @@ class Settings(BaseSettings):
     @field_validator("TRUSTED_HOSTS", mode="before")
     @classmethod
     def assemble_trusted_hosts(cls, v: str | list[str]) -> list[str] | str:
+        if isinstance(v, str) and not v.startswith("["):
+            return [i.strip() for i in v.split(",")]
+        elif isinstance(v, list | str):
+            return v
+        raise ValueError(v)
+
+    @field_validator("OIDC_SCOPES", mode="before")
+    @classmethod
+    def assemble_oidc_scopes(cls, v: str | list[str]) -> list[str] | str:
         if isinstance(v, str) and not v.startswith("["):
             return [i.strip() for i in v.split(",")]
         elif isinstance(v, list | str):

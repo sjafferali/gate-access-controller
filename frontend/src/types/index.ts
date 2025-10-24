@@ -33,6 +33,8 @@ export interface AccessLink {
   updated_at: string
   is_deleted: boolean
   deleted_at?: string
+  owner_user_id?: string | null
+  owner_user_email?: string | null
 }
 
 export interface CreateAccessLink {
@@ -169,6 +171,12 @@ export interface SystemSettings {
   webhook_timeout: number
   webhook_retries: number
   gate_open_duration_seconds: number
+  oidc_enabled: boolean
+  oidc_issuer: string | null
+  oidc_client_id: string | null
+  oidc_redirect_uri: string | null
+  oidc_scopes: string | null
+  oidc_client_secret_set: boolean
   created_at: string
   updated_at: string
 }
@@ -179,4 +187,45 @@ export interface SystemSettingsUpdate {
   webhook_timeout?: number
   webhook_retries?: number
   gate_open_duration_seconds?: number
+  oidc_enabled?: boolean
+  oidc_issuer?: string | null
+  oidc_client_id?: string | null
+  oidc_client_secret?: string | null
+  oidc_redirect_uri?: string | null
+  oidc_scopes?: string | null
+}
+
+// Audit Log Types
+export enum AuditAction {
+  LINK_CREATED = 'LINK_CREATED',
+  LINK_UPDATED = 'LINK_UPDATED',
+  LINK_DELETED = 'LINK_DELETED',
+  LINK_DISABLED = 'LINK_DISABLED',
+  LINK_ENABLED = 'LINK_ENABLED',
+  LINK_CODE_REGENERATED = 'LINK_CODE_REGENERATED',
+}
+
+export interface AuditLog {
+  id: string
+  action: AuditAction
+  action_display: string
+  summary: string
+  resource_type: string
+  resource_id: string
+  link_code?: string
+  link_name?: string
+  user_id?: string
+  user_email?: string
+  ip_address?: string
+  user_agent?: string
+  changes?: Record<string, { old: unknown; new: unknown }>
+  context_data?: Record<string, unknown>
+  created_at: string
+  updated_at: string
+}
+
+export interface AuditLogStats {
+  total_logs: number
+  actions: Record<string, number>
+  recent_activity: AuditLog[]
 }

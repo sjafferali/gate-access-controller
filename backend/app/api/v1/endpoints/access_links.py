@@ -10,15 +10,37 @@ from app.api.v1.schemas import (
     AccessLinkUpdate,
     MessageResponse,
 )
+from app.core.auth import CurrentUser
 from app.core.logging import logger
 from app.db.base import get_db
 from app.models import AccessLink, LinkStatus
+from app.services.audit_service import AuditService
 from app.services.link_service import LinkService
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter()
+
+
+def _get_client_ip(request: Request) -> str | None:
+    """Extract client IP address from request headers"""
+    # Check X-Forwarded-For header first (for proxied requests)
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        # X-Forwarded-For can contain multiple IPs, take the first one
+        return forwarded.split(",")[0].strip()
+
+    # Check X-Real-IP header (another common proxy header)
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip
+
+    # Fall back to direct client IP
+    if request.client:
+        return request.client.host
+
+    return None
 
 
 @router.get("", response_model=AccessLinkListResponse)
@@ -94,18 +116,27 @@ async def list_access_links(
 @router.post("", response_model=AccessLinkResponse, status_code=status.HTTP_201_CREATED)
 async def create_access_link(
     link_data: AccessLinkCreate,
+    request: Request,
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkResponse:
     """Create a new access link"""
     try:
         link_service = LinkService(db)
-        link = await link_service.create_link(link_data)
+        link = await link_service.create_link(
+            link_data,
+            ip_address=_get_client_ip(request),
+            user_agent=request.headers.get("User-Agent"),
+            user_id=user.user_id,
+            user_email=user.email,
+        )
 
         logger.info(
             "Access link created",
             link_id=link.id,
             name=link.name,
             purpose=link.purpose,
+            user_id=user.user_id,
         )
 
         return AccessLinkResponse.model_validate(link)
@@ -157,6 +188,8 @@ async def get_access_link(
 async def update_access_link(
     link_id: str,
     update_data: AccessLinkUpdate,
+    request: Request,
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkResponse:
     """Update an existing access link"""
@@ -172,21 +205,50 @@ async def update_access_link(
                 detail="Access link not found",
             )
 
-        # Update fields
+        # Capture old values for audit logging
         update_dict = update_data.model_dump(exclude_unset=True)
         original_status = link.status
+        changes = {}
+        for field, new_value in update_dict.items():
+            old_value = getattr(link, field)
+            if old_value != new_value:
+                changes[field] = {
+                    "old": AuditService.serialize_value(old_value),
+                    "new": AuditService.serialize_value(new_value),
+                }
 
+        # Update fields
         for field, value in update_dict.items():
             setattr(link, field, value)
 
         # Auto-calculate status based on updated fields
         status_changed = link.update_status()
 
+        # Track status change in audit log if it occurred
+        if status_changed:
+            changes["status"] = {
+                "old": AuditService.serialize_value(original_status),
+                "new": AuditService.serialize_value(link.status),
+            }
+
         # Update timestamp
         link.updated_at = datetime.now()
 
         await db.commit()
         await db.refresh(link)
+
+        # Create audit log entry if there were changes
+        if changes:
+            await AuditService.log_link_updated(
+                db=db,
+                link=link,
+                changes=changes,
+                ip_address=_get_client_ip(request),
+                user_agent=request.headers.get("User-Agent"),
+                user_id=user.user_id,
+                user_email=user.email,
+            )
+            await db.commit()
 
         # Log the update with status transition info
         log_data = {
@@ -215,6 +277,8 @@ async def update_access_link(
 @router.delete("/{link_id}", response_model=MessageResponse)
 async def delete_access_link(
     link_id: str,
+    request: Request,
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> MessageResponse:
     """
@@ -245,6 +309,18 @@ async def delete_access_link(
         # Soft delete using model method
         link.delete()
 
+        await db.commit()
+        await db.refresh(link)
+
+        # Create audit log entry
+        await AuditService.log_link_deleted(
+            db=db,
+            link=link,
+            ip_address=_get_client_ip(request),
+            user_agent=request.headers.get("User-Agent"),
+            user_id=user.user_id,
+            user_email=user.email,
+        )
         await db.commit()
 
         logger.info(
@@ -322,12 +398,20 @@ async def get_link_stats(
 @router.post("/{link_id}/regenerate", response_model=AccessLinkResponse)
 async def regenerate_link_code(
     link_id: str,
+    request: Request,
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkResponse:
     """Regenerate the code for an access link"""
     try:
         link_service = LinkService(db)
-        link = await link_service.regenerate_link_code(link_id)
+        link = await link_service.regenerate_link_code(
+            link_id,
+            ip_address=_get_client_ip(request),
+            user_agent=request.headers.get("User-Agent"),
+            user_id=user.user_id,
+            user_email=user.email,
+        )
 
         logger.info("Link code regenerated", link_id=link_id, new_code=link.link_code)
 
@@ -350,6 +434,8 @@ async def regenerate_link_code(
 @router.post("/{link_id}/disable", response_model=AccessLinkResponse)
 async def disable_access_link(
     link_id: str,
+    request: Request,
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkResponse:
     """
@@ -382,6 +468,17 @@ async def disable_access_link(
         await db.commit()
         await db.refresh(link)
 
+        # Create audit log entry
+        await AuditService.log_link_disabled(
+            db=db,
+            link=link,
+            ip_address=_get_client_ip(request),
+            user_agent=request.headers.get("User-Agent"),
+            user_id=user.user_id,
+            user_email=user.email,
+        )
+        await db.commit()
+
         logger.info(
             "Access link disabled",
             link_id=link_id,
@@ -410,6 +507,8 @@ async def disable_access_link(
 @router.post("/{link_id}/enable", response_model=AccessLinkResponse)
 async def enable_access_link(
     link_id: str,
+    request: Request,
+    user: CurrentUser,
     db: AsyncSession = Depends(get_db),
 ) -> AccessLinkResponse:
     """
@@ -443,6 +542,17 @@ async def enable_access_link(
 
         await db.commit()
         await db.refresh(link)
+
+        # Create audit log entry
+        await AuditService.log_link_enabled(
+            db=db,
+            link=link,
+            ip_address=_get_client_ip(request),
+            user_agent=request.headers.get("User-Agent"),
+            user_id=user.user_id,
+            user_email=user.email,
+        )
+        await db.commit()
 
         log_data = {
             "link_id": link_id,

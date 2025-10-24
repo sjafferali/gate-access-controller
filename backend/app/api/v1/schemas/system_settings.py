@@ -19,11 +19,27 @@ class SystemSettingsBase(BaseModel):
         description="Duration to keep gate open in seconds",
     )
 
+    # OIDC Settings
+    oidc_enabled: bool = Field(False, description="Enable OpenID Connect authentication")
+    oidc_issuer: str | None = Field(
+        None, description="OIDC Issuer URL (e.g., https://auth.example.com)"
+    )
+    oidc_client_id: str | None = Field(None, description="OIDC Client ID")
+    oidc_redirect_uri: str | None = Field(
+        None, description="OIDC Redirect URI (e.g., http://localhost:3000/auth/callback)"
+    )
+    oidc_scopes: str | None = Field(
+        "openid,profile,email", description="OIDC Scopes (comma-separated)"
+    )
+
 
 class SystemSettingsCreate(SystemSettingsBase):
     """Schema for creating/updating system settings"""
 
-    pass
+    # Client secret is write-only and not part of base schema
+    oidc_client_secret: str | None = Field(
+        None, description="OIDC Client Secret (write-only, will be encrypted)"
+    )
 
 
 class SystemSettingsResponse(SystemSettingsBase):
@@ -32,6 +48,9 @@ class SystemSettingsResponse(SystemSettingsBase):
     id: str
     created_at: datetime
     updated_at: datetime
+    oidc_client_secret_set: bool = Field(
+        False, description="Whether OIDC client secret is configured (secret is never returned)"
+    )
 
     class Config:
         from_attributes = True
