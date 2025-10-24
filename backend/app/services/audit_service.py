@@ -21,7 +21,7 @@ class AuditService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AuditLog:
         """Log creation of a new access link"""
         audit_log = AuditLog(
@@ -32,7 +32,7 @@ class AuditService:
             link_code=link.link_code,
             link_name=link.name,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
             ip_address=ip_address,
             user_agent=user_agent,
             changes=None,  # No changes for creation
@@ -62,7 +62,7 @@ class AuditService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AuditLog:
         """
         Log update of an access link
@@ -75,7 +75,7 @@ class AuditService:
             ip_address: IP address of requester
             user_agent: User agent of requester
             user_id: ID of user (for future multi-user support)
-            user_email: Email of user (for future multi-user support)
+            user_name: Display name of user who performed the action
         """
         audit_log = AuditLog(
             id=str(uuid.uuid4()),
@@ -85,7 +85,7 @@ class AuditService:
             link_code=link.link_code,
             link_name=link.name,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
             ip_address=ip_address,
             user_agent=user_agent,
             changes=changes,
@@ -111,7 +111,7 @@ class AuditService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AuditLog:
         """Log deletion (soft delete) of an access link"""
         audit_log = AuditLog(
@@ -122,7 +122,7 @@ class AuditService:
             link_code=link.link_code,
             link_name=link.name,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
             ip_address=ip_address,
             user_agent=user_agent,
             changes=None,
@@ -150,7 +150,7 @@ class AuditService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AuditLog:
         """Log disabling of an access link"""
         audit_log = AuditLog(
@@ -161,7 +161,7 @@ class AuditService:
             link_code=link.link_code,
             link_name=link.name,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
             ip_address=ip_address,
             user_agent=user_agent,
             changes={"status": {"old": "ACTIVE", "new": "DISABLED"}},
@@ -185,7 +185,7 @@ class AuditService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AuditLog:
         """Log enabling of a previously disabled access link"""
         audit_log = AuditLog(
@@ -196,7 +196,7 @@ class AuditService:
             link_code=link.link_code,
             link_name=link.name,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
             ip_address=ip_address,
             user_agent=user_agent,
             changes={"status": {"old": "DISABLED", "new": link.status}},
@@ -224,7 +224,7 @@ class AuditService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AuditLog:
         """Log regeneration of a link code"""
         audit_log = AuditLog(
@@ -235,7 +235,7 @@ class AuditService:
             link_code=new_code,  # Store the new code
             link_name=link.name,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
             ip_address=ip_address,
             user_agent=user_agent,
             changes={"link_code": {"old": old_code, "new": new_code}},

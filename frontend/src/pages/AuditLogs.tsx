@@ -98,7 +98,7 @@ export default function AuditLogs() {
             <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
-              placeholder="Search by link code, name, IP, or action..."
+              placeholder="Search by link code, name, user, IP, or action..."
               value={search}
               onChange={(e) => {
                 setSearch(e.target.value)
@@ -265,6 +265,9 @@ export default function AuditLogs() {
                     Timestamp
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                  </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Action
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -281,7 +284,7 @@ export default function AuditLogs() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {data.items.length === 0 ? (
                   <tr>
-                    <td colSpan={5} className="px-6 py-12 text-center">
+                    <td colSpan={6} className="px-6 py-12 text-center">
                       <div className="text-gray-400">
                         <p className="text-lg font-medium">No audit logs found</p>
                         <p className="text-sm mt-1">
@@ -297,6 +300,9 @@ export default function AuditLogs() {
                     <tr key={log.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                         {formatDateTime(log.created_at)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                        {log.user_name || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span

@@ -20,7 +20,7 @@ class AuditLogResponse(BaseModel):
     link_code: str | None = Field(None, description="Link code at time of action")
     link_name: str | None = Field(None, description="Link name at time of action")
     user_id: str | None = Field(None, description="ID of user who performed the action")
-    user_email: str | None = Field(None, description="Email of user who performed the action")
+    user_name: str | None = Field(None, description="Display name of user who performed the action")
     ip_address: str | None = Field(None, description="IP address from which action was performed")
     user_agent: str | None = Field(None, description="User agent string from the request")
     changes: dict[str, Any] | None = Field(None, description="Changed fields with old and new values")

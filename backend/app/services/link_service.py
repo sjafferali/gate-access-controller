@@ -25,7 +25,7 @@ class LinkService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AccessLink:
         """Create a new access link with a unique code"""
         from app.utils.link_status import calculate_link_status
@@ -70,7 +70,7 @@ class LinkService:
             ip_address=ip_address,
             user_agent=user_agent,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
         )
         await self.db.commit()
 
@@ -143,7 +143,7 @@ class LinkService:
         ip_address: str | None = None,
         user_agent: str | None = None,
         user_id: str | None = None,
-        user_email: str | None = None,
+        user_name: str | None = None,
     ) -> AccessLink:
         """Regenerate the code for an existing link"""
         # Get the link
@@ -177,7 +177,7 @@ class LinkService:
             ip_address=ip_address,
             user_agent=user_agent,
             user_id=user_id,
-            user_email=user_email,
+            user_name=user_name,
         )
         await self.db.commit()
 

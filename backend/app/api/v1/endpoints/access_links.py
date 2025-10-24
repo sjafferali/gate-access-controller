@@ -128,7 +128,7 @@ async def create_access_link(
             ip_address=_get_client_ip(request),
             user_agent=request.headers.get("User-Agent"),
             user_id=user.user_id,
-            user_email=user.email,
+            user_name=user.display_name,
         )
 
         logger.info(
@@ -246,7 +246,7 @@ async def update_access_link(
                 ip_address=_get_client_ip(request),
                 user_agent=request.headers.get("User-Agent"),
                 user_id=user.user_id,
-                user_email=user.email,
+                user_name=user.display_name,
             )
             await db.commit()
 
@@ -319,7 +319,7 @@ async def delete_access_link(
             ip_address=_get_client_ip(request),
             user_agent=request.headers.get("User-Agent"),
             user_id=user.user_id,
-            user_email=user.email,
+            user_name=user.display_name,
         )
         await db.commit()
 
@@ -410,7 +410,7 @@ async def regenerate_link_code(
             ip_address=_get_client_ip(request),
             user_agent=request.headers.get("User-Agent"),
             user_id=user.user_id,
-            user_email=user.email,
+            user_name=user.display_name,
         )
 
         logger.info("Link code regenerated", link_id=link_id, new_code=link.link_code)
@@ -475,7 +475,7 @@ async def disable_access_link(
             ip_address=_get_client_ip(request),
             user_agent=request.headers.get("User-Agent"),
             user_id=user.user_id,
-            user_email=user.email,
+            user_name=user.display_name,
         )
         await db.commit()
 
@@ -550,7 +550,7 @@ async def enable_access_link(
             ip_address=_get_client_ip(request),
             user_agent=request.headers.get("User-Agent"),
             user_id=user.user_id,
-            user_email=user.email,
+            user_name=user.display_name,
         )
         await db.commit()
 

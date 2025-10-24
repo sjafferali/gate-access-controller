@@ -77,11 +77,11 @@ class AuditLog(Base, BaseModelMixin):
         comment="ID of user who performed the action (for future multi-user support)",
     )
 
-    user_email: Mapped[str | None] = mapped_column(
+    user_name: Mapped[str | None] = mapped_column(
         String(255),
         nullable=True,
         index=True,
-        comment="Email of user who performed the action (for future multi-user support)",
+        comment="Display name of user who performed the action",
     )
 
     # Request context

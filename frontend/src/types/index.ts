@@ -215,7 +215,7 @@ export interface AuditLog {
   link_code?: string
   link_name?: string
   user_id?: string
-  user_email?: string
+  user_name?: string
   ip_address?: string
   user_agent?: string
   changes?: Record<string, { old: unknown; new: unknown }>
