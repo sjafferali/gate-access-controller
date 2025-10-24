@@ -306,8 +306,8 @@ export const authApi = {
     return data
   },
 
-  getLoginUrl: async (): Promise<{ authorization_url: string; state: string }> => {
-    const { data } = await apiClient.get<{ authorization_url: string; state: string }>(
+  getLoginUrl: async (): Promise<{ login_url: string; state: string }> => {
+    const { data } = await apiClient.get<{ login_url: string; state: string }>(
       '/v1/auth/login-url'
     )
     return data

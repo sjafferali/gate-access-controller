@@ -53,11 +53,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = async () => {
     try {
-      const { authorization_url, state } = await authApi.getLoginUrl()
+      const { login_url, state } = await authApi.getLoginUrl()
       // Store state in sessionStorage for verification after callback
       sessionStorage.setItem('oauth_state', state)
       // Redirect to OIDC provider
-      window.location.href = authorization_url
+      window.location.href = login_url
     } catch (error) {
       console.error('Failed to initiate login:', error)
       toast.error('Failed to initiate login')
