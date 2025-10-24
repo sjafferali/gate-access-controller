@@ -34,7 +34,7 @@ export interface AccessLink {
   is_deleted: boolean
   deleted_at?: string
   owner_user_id?: string | null
-  owner_user_email?: string | null
+  owner_user_name?: string | null
 }
 
 export interface CreateAccessLink {

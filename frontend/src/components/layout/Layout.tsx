@@ -140,24 +140,45 @@ export default function Layout() {
 
             {/* User info */}
             {user && (
-              <div className="flex items-center space-x-2 rounded-lg bg-gray-100 px-3 py-2">
-                <div
-                  className={clsx(
-                    'flex h-8 w-8 items-center justify-center rounded-full',
-                    user.is_authenticated
-                      ? 'bg-primary-600 text-white'
-                      : 'bg-gray-400 text-white'
+              <div className="flex items-center space-x-3 rounded-lg border-2 border-gray-200 bg-white px-4 py-2 shadow-sm">
+                {/* Authentication status indicator */}
+                <div className="relative">
+                  <div
+                    className={clsx(
+                      'flex h-10 w-10 items-center justify-center rounded-full',
+                      user.is_authenticated
+                        ? 'bg-gradient-to-br from-primary-500 to-primary-700 text-white shadow-md'
+                        : 'bg-gray-300 text-gray-600'
+                    )}
+                  >
+                    <FiUser className="h-5 w-5" />
+                  </div>
+                  {user.is_authenticated && (
+                    <div
+                      className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-white bg-green-500"
+                      title="Authenticated"
+                    />
                   )}
-                >
-                  <FiUser className="h-4 w-4" />
                 </div>
-                <div className="flex flex-col">
-                  <span className="text-sm font-medium text-gray-900">{user.display_name}</span>
+
+                {/* User details */}
+                <div className="hidden flex-col sm:flex">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-sm font-semibold text-gray-900">
+                      {user.display_name}
+                    </span>
+                    {user.is_authenticated ? (
+                      <span className="inline-flex items-center rounded-full bg-green-100 px-2 py-0.5 text-xs font-medium text-green-800">
+                        Authenticated
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                        Local Mode
+                      </span>
+                    )}
+                  </div>
                   {user.email && (
                     <span className="text-xs text-gray-500">{user.email}</span>
-                  )}
-                  {!user.is_authenticated && (
-                    <span className="text-xs text-gray-500">(No auth)</span>
                   )}
                 </div>
               </div>

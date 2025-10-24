@@ -140,7 +140,7 @@ export default function AccessLinks() {
         </div>
       ) : data && data.items.length > 0 ? (
         <>
-          <LinksList links={data.items} />
+          <LinksList links={data.items} currentUser={currentUser} />
           <Pagination currentPage={page} totalPages={data.pages} onPageChange={setPage} />
         </>
       ) : (

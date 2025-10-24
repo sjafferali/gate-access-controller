@@ -1,11 +1,11 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
-import { FiEdit, FiEye, FiCopy, FiTrash2, FiSlash, FiCheck, FiFileText } from 'react-icons/fi'
+import { FiEdit, FiEye, FiCopy, FiTrash2, FiSlash, FiCheck, FiFileText, FiUser, FiUsers } from 'react-icons/fi'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import toast from 'react-hot-toast'
-import { AccessLink, LinkStatus } from '@/types'
+import { AccessLink, LinkStatus, User } from '@/types'
 import { accessLinksApi } from '@/services/api'
 import DeleteConfirmationModal from '@/components/modals/DeleteConfirmationModal'
 import { copyToClipboard } from '@/utils/clipboard'
@@ -13,6 +13,7 @@ import { formatLinkStatus } from '@/utils/format'
 
 interface LinksListProps {
   links: AccessLink[]
+  currentUser?: User | null
 }
 
 const statusColors = {
@@ -21,7 +22,7 @@ const statusColors = {
   [LinkStatus.DISABLED]: 'bg-yellow-100 text-yellow-800',
 }
 
-export default function LinksList({ links }: LinksListProps) {
+export default function LinksList({ links, currentUser }: LinksListProps) {
   const queryClient = useQueryClient()
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean
@@ -31,6 +32,12 @@ export default function LinksList({ links }: LinksListProps) {
     link: null,
   })
   const [isDeleting, setIsDeleting] = useState(false)
+
+  // Helper function to check if current user owns the link
+  const isOwnedByCurrentUser = (link: AccessLink): boolean => {
+    if (!currentUser || !link.owner_user_id) return false
+    return link.owner_user_id === currentUser.user_id
+  }
 
   const copyLinkUrl = async (linkCode: string) => {
     const url = `${window.location.origin}/access/${linkCode}`
@@ -97,31 +104,47 @@ export default function LinksList({ links }: LinksListProps) {
     <>
       {/* Mobile Card View */}
       <div className="space-y-4 md:hidden">
-        {links.map((link) => (
-          <div
-            key={link.id}
-            className={clsx(
-              'rounded-lg bg-white p-4 shadow',
-              link.is_deleted && 'bg-gray-50 opacity-50'
-            )}
-          >
-            <div className="mb-3 flex items-start justify-between">
-              <div className="min-w-0 flex-1">
-                <h3 className="truncate text-base font-semibold text-gray-900">
-                  {link.name}
-                  {link.is_deleted && <span className="ml-2 text-xs text-red-600">(Deleted)</span>}
-                </h3>
-                <p className="mt-1 text-sm text-gray-500">{link.purpose}</p>
+        {links.map((link) => {
+          const isOwned = isOwnedByCurrentUser(link)
+          return (
+            <div
+              key={link.id}
+              className={clsx(
+                'rounded-lg bg-white p-4 shadow',
+                link.is_deleted && 'bg-gray-50 opacity-50',
+                isOwned && 'border-2 border-primary-200'
+              )}
+            >
+              <div className="mb-3 flex items-start justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center space-x-2">
+                    <h3 className="truncate text-base font-semibold text-gray-900">
+                      {link.name}
+                      {link.is_deleted && <span className="ml-2 text-xs text-red-600">(Deleted)</span>}
+                    </h3>
+                    {isOwned ? (
+                      <span className="inline-flex items-center rounded-full bg-primary-100 px-2 py-0.5 text-xs font-medium text-primary-800">
+                        <FiUser className="mr-1 h-3 w-3" />
+                        Your Link
+                      </span>
+                    ) : link.owner_user_name ? (
+                      <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                        <FiUsers className="mr-1 h-3 w-3" />
+                        {link.owner_user_name}
+                      </span>
+                    ) : null}
+                  </div>
+                  <p className="mt-1 text-sm text-gray-500">{link.purpose}</p>
+                </div>
+                <span
+                  className={clsx(
+                    'ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold',
+                    statusColors[link.status]
+                  )}
+                >
+                  {formatLinkStatus(link.status)}
+                </span>
               </div>
-              <span
-                className={clsx(
-                  'ml-2 inline-flex rounded-full px-2.5 py-1 text-xs font-semibold',
-                  statusColors[link.status]
-                )}
-              >
-                {formatLinkStatus(link.status)}
-              </span>
-            </div>
 
             <div className="mb-3 space-y-2 text-sm">
               <div className="flex items-center justify-between">
@@ -206,7 +229,8 @@ export default function LinksList({ links }: LinksListProps) {
               )}
             </div>
           </div>
-        ))}
+        )
+      })}
       </div>
 
       {/* Desktop Table View */}
@@ -216,6 +240,9 @@ export default function LinksList({ links }: LinksListProps) {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Owner
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
                 Code
@@ -235,23 +262,44 @@ export default function LinksList({ links }: LinksListProps) {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200 bg-white">
-            {links.map((link) => (
-              <tr
-                key={link.id}
-                className={clsx('hover:bg-gray-50', link.is_deleted && 'bg-gray-50 opacity-50')}
-              >
-                <td className="whitespace-nowrap px-6 py-4">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">
-                      {link.name}
-                      {link.is_deleted && (
-                        <span className="ml-2 text-xs text-red-600">(Deleted)</span>
-                      )}
+            {links.map((link) => {
+              const isOwned = isOwnedByCurrentUser(link)
+              return (
+                <tr
+                  key={link.id}
+                  className={clsx(
+                    'hover:bg-gray-50',
+                    link.is_deleted && 'bg-gray-50 opacity-50',
+                    isOwned && 'border-l-4 border-primary-500 bg-primary-50'
+                  )}
+                >
+                  <td className="whitespace-nowrap px-6 py-4">
+                    <div>
+                      <div className="text-sm font-medium text-gray-900">
+                        {link.name}
+                        {link.is_deleted && (
+                          <span className="ml-2 text-xs text-red-600">(Deleted)</span>
+                        )}
+                      </div>
+                      <div className="text-xs text-gray-500">{link.purpose}</div>
                     </div>
-                    <div className="text-xs text-gray-500">{link.purpose}</div>
-                  </div>
-                </td>
-                <td className="whitespace-nowrap px-6 py-4">
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    {isOwned ? (
+                      <span className="inline-flex items-center rounded-full bg-primary-100 px-2.5 py-0.5 text-xs font-medium text-primary-800">
+                        <FiUser className="mr-1 h-3.5 w-3.5" />
+                        You
+                      </span>
+                    ) : link.owner_user_name ? (
+                      <div className="flex items-center space-x-1">
+                        <FiUsers className="h-3.5 w-3.5 text-gray-400" />
+                        <span className="text-sm text-gray-600">{link.owner_user_name}</span>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-gray-400">—</span>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">
                   <div className="flex items-center space-x-2">
                     <code className="font-mono text-sm text-gray-900">{link.link_code}</code>
                     <button
@@ -336,7 +384,8 @@ export default function LinksList({ links }: LinksListProps) {
                   </div>
                 </td>
               </tr>
-            ))}
+            )
+          })}
           </tbody>
         </table>
       </div>
