@@ -239,9 +239,22 @@ else
 fi
 
 # Setup CI virtual environment for tools
-if [ ! -d "$CI_VENV" ]; then
+# Check if venv exists and has the activate script (indicating it's complete)
+if [ ! -f "$CI_VENV/bin/activate" ]; then
     echo -e "\n${YELLOW}Creating CI tools virtual environment...${NC}"
+    # Remove any incomplete venv directory
+    if [ -d "$CI_VENV" ]; then
+        echo -e "${YELLOW}Removing incomplete virtual environment...${NC}"
+        rm -rf "$CI_VENV"
+    fi
     python3 -m venv "$CI_VENV"
+
+    # Verify the venv was created successfully
+    if [ ! -f "$CI_VENV/bin/activate" ]; then
+        echo -e "${RED}Failed to create virtual environment${NC}"
+        echo -e "${RED}Please ensure python3-venv is installed${NC}"
+        exit 1
+    fi
 fi
 
 # Activate virtual environment
