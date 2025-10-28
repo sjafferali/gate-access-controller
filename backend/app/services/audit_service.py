@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.logging import logger
 from app.models.access_link import AccessLink
 from app.models.audit_log import AuditAction, AuditLog, ResourceType
+from app.models.notification_provider import NotificationProvider
 
 
 class AuditService:
@@ -264,3 +265,109 @@ class AuditService:
             return None
         else:
             return value
+
+    @staticmethod
+    async def log_notification_provider_created(
+        db: AsyncSession,
+        provider: NotificationProvider,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        user_id: str | None = None,
+        user_name: str | None = None,
+    ) -> AuditLog:
+        """Log creation of a new notification provider"""
+        audit_log = AuditLog(
+            id=str(uuid.uuid4()),
+            action=AuditAction.NOTIFICATION_PROVIDER_CREATED.value,
+            resource_type=ResourceType.NOTIFICATION_PROVIDER.value,
+            resource_id=provider.id,
+            user_id=user_id,
+            user_name=user_name,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            changes=None,
+            context_data={
+                "name": provider.name,
+                "provider_type": provider.provider_type.value,
+                "enabled": provider.enabled,
+            },
+        )
+        db.add(audit_log)
+        await db.flush()
+
+        logger.info(
+            f"Audit log created: Notification provider created - {provider.name}",
+            extra={"audit_log_id": audit_log.id, "provider_id": provider.id},
+        )
+        return audit_log
+
+    @staticmethod
+    async def log_notification_provider_updated(
+        db: AsyncSession,
+        provider: NotificationProvider,
+        changes: dict[str, dict[str, Any]],
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        user_id: str | None = None,
+        user_name: str | None = None,
+    ) -> AuditLog:
+        """Log update of a notification provider"""
+        audit_log = AuditLog(
+            id=str(uuid.uuid4()),
+            action=AuditAction.NOTIFICATION_PROVIDER_UPDATED.value,
+            resource_type=ResourceType.NOTIFICATION_PROVIDER.value,
+            resource_id=provider.id,
+            user_id=user_id,
+            user_name=user_name,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            changes=changes,
+            context_data={
+                "name": provider.name,
+                "updated_fields": list(changes.keys()),
+            },
+        )
+        db.add(audit_log)
+        await db.flush()
+
+        logger.info(
+            f"Audit log created: Notification provider updated - {provider.name}, "
+            f"fields: {', '.join(changes.keys())}",
+            extra={"audit_log_id": audit_log.id, "provider_id": provider.id},
+        )
+        return audit_log
+
+    @staticmethod
+    async def log_notification_provider_deleted(
+        db: AsyncSession,
+        provider: NotificationProvider,
+        ip_address: str | None = None,
+        user_agent: str | None = None,
+        user_id: str | None = None,
+        user_name: str | None = None,
+    ) -> AuditLog:
+        """Log deletion of a notification provider"""
+        audit_log = AuditLog(
+            id=str(uuid.uuid4()),
+            action=AuditAction.NOTIFICATION_PROVIDER_DELETED.value,
+            resource_type=ResourceType.NOTIFICATION_PROVIDER.value,
+            resource_id=provider.id,
+            user_id=user_id,
+            user_name=user_name,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            changes=None,
+            context_data={
+                "name": provider.name,
+                "provider_type": provider.provider_type.value,
+                "deleted_at": datetime.now(UTC).isoformat(),
+            },
+        )
+        db.add(audit_log)
+        await db.flush()
+
+        logger.info(
+            f"Audit log created: Notification provider deleted - {provider.name}",
+            extra={"audit_log_id": audit_log.id, "provider_id": provider.id},
+        )
+        return audit_log

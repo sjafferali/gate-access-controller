@@ -29,9 +29,19 @@ export default function AuthCallback() {
       try {
         await authApi.callback(code, state)
         sessionStorage.removeItem('oauth_state')
+
+        // Set a flag to indicate we just authenticated
+        sessionStorage.setItem('just_authenticated', 'true')
+
+        // Refresh user and wait for the state to update
         await refreshUser()
-        void navigate('/dashboard')
+
+        // Add a small delay to ensure auth state propagates
+        await new Promise((resolve) => setTimeout(resolve, 100))
+
+        // Navigate to dashboard and show success message
         toast.success('Successfully authenticated')
+        void navigate('/dashboard', { replace: true })
       } catch (err) {
         console.error('Callback error:', err)
         setError('Failed to complete authentication')

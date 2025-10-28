@@ -27,6 +27,15 @@ from app.api.v1.schemas.common import (
     MessageResponse,
     PaginationParams,
 )
+from app.api.v1.schemas.notification_provider import (
+    NotificationProviderCreate,
+    NotificationProviderListResponse,
+    NotificationProviderResponse,
+    NotificationProviderSummary,
+    NotificationProviderUpdate,
+    PushoverConfig,
+    WebhookConfig,
+)
 from app.api.v1.schemas.system_settings import (
     SystemSettingsCreate,
     SystemSettingsResponse,
@@ -56,6 +65,14 @@ __all__ = [
     "ErrorResponse",
     "HealthResponse",
     "PaginationParams",
+    # Notification Provider schemas
+    "NotificationProviderCreate",
+    "NotificationProviderUpdate",
+    "NotificationProviderResponse",
+    "NotificationProviderListResponse",
+    "NotificationProviderSummary",
+    "PushoverConfig",
+    "WebhookConfig",
     # System Settings schemas
     "SystemSettingsCreate",
     "SystemSettingsResponse",

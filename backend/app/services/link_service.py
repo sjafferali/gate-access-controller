@@ -28,13 +28,16 @@ class LinkService:
         user_name: str | None = None,
     ) -> AccessLink:
         """Create a new access link with a unique code"""
+        from app.models.notification_provider import NotificationProvider
         from app.utils.link_status import calculate_link_status
 
         # Use custom link code if provided, otherwise generate one
         if link_data.link_code:
             # Validate that custom code is unique
             if await self._is_code_taken(link_data.link_code):
-                raise ValueError(f"Link code '{link_data.link_code}' is already in use. Please choose a different code.")
+                raise ValueError(
+                    f"Link code '{link_data.link_code}' is already in use. Please choose a different code."
+                )
             link_code = link_data.link_code
         else:
             # Generate unique link code
@@ -46,6 +49,11 @@ class LinkService:
                 hours=settings.DEFAULT_LINK_EXPIRATION_HOURS
             )
 
+        # Extract notification provider IDs before dumping (since it's not a column)
+        notification_provider_ids = link_data.notification_provider_ids
+        # Exclude link_code and notification_provider_ids since we handle them separately
+        link_dict = link_data.model_dump(exclude={"notification_provider_ids", "link_code"})
+
         # Create the link with initial ACTIVE status
         # Status will be recalculated immediately after creation
         link = AccessLink(
@@ -55,7 +63,7 @@ class LinkService:
             denied_count=0,  # Initialize to 0 (database default)
             owner_user_id=user_id,  # Track who created this link
             owner_user_name=user_name,  # Track who created this link
-            **link_data.model_dump(),
+            **link_dict,
         )
 
         # Calculate the correct status based on the provided fields
@@ -67,6 +75,18 @@ class LinkService:
             link.status = calculated_status
 
         self.db.add(link)
+        await self.db.flush()  # Flush to get link.id before adding relationships
+
+        # Load and associate notification providers
+        if notification_provider_ids:
+            result = await self.db.execute(
+                select(NotificationProvider)
+                .where(NotificationProvider.id.in_(notification_provider_ids))
+                .where(NotificationProvider.is_deleted == False)  # noqa: E712
+            )
+            providers = list(result.scalars().all())
+            link.notification_providers = providers
+
         await self.db.commit()
         await self.db.refresh(link)
 
@@ -86,6 +106,7 @@ class LinkService:
             "link_code": link_code,
             "name": link.name,
             "status": link.status,  # Already a string since LinkStatus inherits from str
+            "notification_providers": len(link.notification_providers),
         }
         if status_changed:
             log_data["status_calculated"] = f"ACTIVE → {link.status}"

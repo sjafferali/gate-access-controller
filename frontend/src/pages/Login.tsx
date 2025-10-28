@@ -10,11 +10,13 @@ export default function Login() {
   useEffect(() => {
     // If already authenticated, redirect to dashboard
     if (isAuthenticated) {
-      void navigate('/dashboard')
+      // Clear any authentication flags
+      sessionStorage.removeItem('just_authenticated')
+      void navigate('/dashboard', { replace: true })
     }
     // If OIDC is not enabled, redirect to dashboard (no auth required)
     if (!isLoading && !oidcEnabled) {
-      void navigate('/dashboard')
+      void navigate('/dashboard', { replace: true })
     }
   }, [isAuthenticated, oidcEnabled, isLoading, navigate])
 

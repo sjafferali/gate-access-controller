@@ -17,6 +17,10 @@ import type {
   SystemSettings,
   SystemSettingsUpdate,
   User,
+  NotificationProvider,
+  NotificationProviderSummary,
+  CreateNotificationProvider,
+  UpdateNotificationProvider,
 } from '@/types'
 import { LinkPurpose } from '@/types'
 
@@ -299,6 +303,62 @@ export const auditLogsApi = {
   },
 }
 
+// Notification Providers API
+export const notificationProvidersApi = {
+  list: async (params?: {
+    page?: number
+    size?: number
+    include_deleted?: boolean
+    enabled_only?: boolean
+  }): Promise<PaginatedResponse<NotificationProvider>> => {
+    const { data } = await apiClient.get<PaginatedResponse<NotificationProvider>>(
+      '/v1/notification-providers',
+      { params }
+    )
+    return data
+  },
+
+  getSummary: async (): Promise<NotificationProviderSummary[]> => {
+    const { data } = await apiClient.get<NotificationProviderSummary[]>(
+      '/v1/notification-providers/summary'
+    )
+    return data
+  },
+
+  get: async (providerId: string): Promise<NotificationProvider> => {
+    const { data } = await apiClient.get<NotificationProvider>(
+      `/v1/notification-providers/${providerId}`
+    )
+    return data
+  },
+
+  create: async (providerData: CreateNotificationProvider): Promise<NotificationProvider> => {
+    const { data } = await apiClient.post<NotificationProvider>(
+      '/v1/notification-providers',
+      providerData
+    )
+    return data
+  },
+
+  update: async (
+    providerId: string,
+    updateData: UpdateNotificationProvider
+  ): Promise<NotificationProvider> => {
+    const { data } = await apiClient.patch<NotificationProvider>(
+      `/v1/notification-providers/${providerId}`,
+      updateData
+    )
+    return data
+  },
+
+  delete: async (providerId: string): Promise<MessageResponse> => {
+    const { data } = await apiClient.delete<MessageResponse>(
+      `/v1/notification-providers/${providerId}`
+    )
+    return data
+  },
+}
+
 // Auth API
 export const authApi = {
   getStatus: async (): Promise<{ oidc_enabled: boolean }> => {
@@ -307,9 +367,7 @@ export const authApi = {
   },
 
   getLoginUrl: async (): Promise<{ login_url: string; state: string }> => {
-    const { data } = await apiClient.get<{ login_url: string; state: string }>(
-      '/v1/auth/login-url'
-    )
+    const { data } = await apiClient.get<{ login_url: string; state: string }>('/v1/auth/login-url')
     return data
   },
 

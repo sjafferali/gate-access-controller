@@ -474,7 +474,8 @@ export default function Settings() {
                       placeholder="https://admin.example.com or admin.example.com"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Domain for admin panel access. Include http:// or https:// to specify protocol (defaults to https://)
+                      Domain for admin panel access. Include http:// or https:// to specify protocol
+                      (defaults to https://)
                     </p>
                   </div>
 
@@ -493,7 +494,8 @@ export default function Settings() {
                       placeholder="https://x.com or http://localhost:3000"
                     />
                     <p className="mt-1 text-xs text-gray-500">
-                      Domain for public access links. Include http:// or https:// to specify protocol (defaults to https://)
+                      Domain for public access links. Include http:// or https:// to specify
+                      protocol (defaults to https://)
                     </p>
                   </div>
                 </div>

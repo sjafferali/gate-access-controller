@@ -19,6 +19,10 @@ class AccessLinkBase(BaseModel):
     expiration: datetime | None = Field(None, description="Date/time when the link expires")
     max_uses: int | None = Field(None, ge=1, description="Maximum number of uses allowed")
     auto_open: bool = Field(False, description="Automatically open gate when link is accessed")
+    notification_provider_ids: list[str] = Field(
+        default_factory=list,
+        description="IDs of notification providers to notify when link is used",
+    )
 
     class Config:
         # Enable automatic JSON parsing of datetime strings
@@ -49,7 +53,8 @@ class AccessLinkCreate(AccessLinkBase):
                 # Remove non-alphanumeric characters
                 v = "".join(c for c in v if c.isalnum())
             return v if v else None
-        return v  # type: ignore[return-value]
+        # For non-string values, return None since we can't process them
+        return None
 
     @validator("expiration", pre=True)
     def empty_str_to_none(cls, v: Any) -> Any | None:
@@ -112,6 +117,7 @@ class AccessLinkUpdate(BaseModel):
     expiration: datetime | None = None
     max_uses: int | None = Field(None, ge=1)
     auto_open: bool | None = None
+    notification_provider_ids: list[str] | None = None
 
 
 class AccessLinkResponse(AccessLinkBase):
@@ -129,9 +135,24 @@ class AccessLinkResponse(AccessLinkBase):
     deleted_at: datetime | None = None
     owner_user_id: str | None = None
     owner_user_name: str | None = None
+    notification_provider_ids: list[str] = Field(default_factory=list)
 
     class Config:
         from_attributes = True
+
+    @classmethod
+    def from_orm(cls, obj: Any) -> "AccessLinkResponse":
+        """Custom from_orm to handle notification_providers relationship"""
+        # Get notification provider IDs from the relationship
+        notification_provider_ids = [p.id for p in obj.notification_providers]
+
+        # Create the response object
+        data = {
+            **{k: getattr(obj, k) for k in obj.__table__.columns.keys()},
+            "notification_provider_ids": notification_provider_ids,
+            "remaining_uses": obj.remaining_uses,
+        }
+        return cls(**data)
 
 
 class AccessLinkListResponse(BaseModel):

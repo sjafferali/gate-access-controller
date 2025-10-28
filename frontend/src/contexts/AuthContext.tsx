@@ -11,7 +11,7 @@ interface AuthContextType {
   oidcEnabled: boolean
   login: () => Promise<void>
   logout: () => Promise<void>
-  refreshUser: () => Promise<void>
+  refreshUser: () => Promise<User | null>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -26,9 +26,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const currentUser = await authApi.getCurrentUser()
       setUser(currentUser)
+      return currentUser
     } catch (error) {
       console.error('Failed to fetch user:', error)
       setUser(null)
+      return null
     }
   }, [])
 

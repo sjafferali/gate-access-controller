@@ -8,9 +8,20 @@ export default function ProtectedLayout() {
   const navigate = useNavigate()
 
   useEffect(() => {
+    // Check if we just authenticated - if so, give auth state time to update
+    const justAuthenticated = sessionStorage.getItem('just_authenticated')
+    if (justAuthenticated) {
+      sessionStorage.removeItem('just_authenticated')
+      return
+    }
+
     // If OIDC is enabled and user is not authenticated, redirect to login
+    // Add a small delay to avoid race conditions with auth state updates
     if (!isLoading && oidcEnabled && !isAuthenticated) {
-      void navigate('/login')
+      const timer = setTimeout(() => {
+        void navigate('/login', { replace: true })
+      }, 100)
+      return () => clearTimeout(timer)
     }
   }, [isAuthenticated, oidcEnabled, isLoading, navigate])
 

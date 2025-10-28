@@ -102,7 +102,7 @@ async def save_system_settings(
                     status_code=400,
                     detail="SECRET_KEY must be set to a fixed value before enabling OIDC. "
                     "Set SECRET_KEY in your .env file to a secure random string. "
-                    "Generate one with: python -c \"import secrets; print(secrets.token_urlsafe(32))\"",
+                    'Generate one with: python -c "import secrets; print(secrets.token_urlsafe(32))"',
                 )
 
         # Check if settings already exist

@@ -187,6 +187,10 @@ class OIDCService:
             "response_type": "code",
             "scope": " ".join(self.scopes),
             "state": state,
+            # Add prompt parameter to control consent behavior
+            # Using 'login' to force re-authentication but avoid unnecessary consent prompts
+            # when consent has been pre-configured in Authelia
+            "prompt": "login",
         }
 
         from urllib.parse import urlencode

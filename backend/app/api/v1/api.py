@@ -6,6 +6,7 @@ from app.api.v1.endpoints import (
     audit_logs,
     auth,
     health,
+    notification_providers,
     system_settings,
     validate,
 )
@@ -20,4 +21,9 @@ api_router.include_router(access_links.router, prefix="/links", tags=["access-li
 api_router.include_router(access_logs.router, prefix="/logs", tags=["access-logs"])
 api_router.include_router(audit_logs.router, prefix="/audit-logs", tags=["audit-logs"])
 api_router.include_router(validate.router, prefix="/validate", tags=["validation"])
+api_router.include_router(
+    notification_providers.router,
+    prefix="/notification-providers",
+    tags=["notification-providers"],
+)
 api_router.include_router(system_settings.router, prefix="/settings", tags=["system-settings"])

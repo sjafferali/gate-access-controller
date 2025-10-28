@@ -3,7 +3,7 @@
 import base64
 
 from cryptography.fernet import Fernet
-from sqlalchemy import Boolean, Integer, String, Text
+from sqlalchemy import JSON, Boolean, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.core.config import settings
@@ -90,6 +90,20 @@ class SystemSettings(Base, BaseModelMixin):
         nullable=True,
         default="openid,profile,email",
         comment="OIDC Scopes (comma-separated)",
+    )
+
+    # Notification Settings - Default providers
+    default_notification_provider_ids: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+        comment="Default notification provider IDs for new links",
+    )
+    quick_link_notification_provider_ids: Mapped[list[str]] = mapped_column(
+        JSON,
+        nullable=False,
+        default=list,
+        comment="Notification provider IDs for quick links",
     )
 
     @staticmethod

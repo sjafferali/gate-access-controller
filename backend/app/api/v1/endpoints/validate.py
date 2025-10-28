@@ -5,6 +5,7 @@ from app.core.logging import logger
 from app.db.base import get_db
 from app.models import AccessLog, AccessStatus, DenialReason
 from app.services.link_service import LinkService
+from app.services.notification_service import NotificationService
 from app.services.webhook_service import WebhookService
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -75,6 +76,19 @@ async def validate_link(
 
                 db.add(log)
                 await db.commit()
+
+                # Send notifications (in background, don't block response)
+                try:
+                    notification_service = NotificationService(db)
+                    await notification_service.send_notifications_for_link(
+                        link, event_type="access_granted"
+                    )
+                except Exception as notif_error:
+                    logger.warning(
+                        "Failed to send notifications",
+                        link_code=link_code,
+                        error=str(notif_error),
+                    )
 
                 logger.info(
                     "Auto-open: Access granted",
@@ -203,6 +217,19 @@ async def request_access(
 
             db.add(log)
             await db.commit()
+
+            # Send notifications (in background, don't block response)
+            try:
+                notification_service = NotificationService(db)
+                await notification_service.send_notifications_for_link(
+                    link, event_type="access_granted"
+                )
+            except Exception as notif_error:
+                logger.warning(
+                    "Failed to send notifications",
+                    link_code=link_code,
+                    error=str(notif_error),
+                )
 
             logger.info(
                 "Access granted",

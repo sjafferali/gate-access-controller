@@ -42,6 +42,14 @@ class SystemSettingsBase(BaseModel):
         "openid,profile,email", description="OIDC Scopes (comma-separated)"
     )
 
+    # Notification Settings
+    default_notification_provider_ids: list[str] = Field(
+        default_factory=list, description="Default notification provider IDs for new links"
+    )
+    quick_link_notification_provider_ids: list[str] = Field(
+        default_factory=list, description="Notification provider IDs for quick links"
+    )
+
 
 class SystemSettingsCreate(SystemSettingsBase):
     """Schema for creating/updating system settings"""

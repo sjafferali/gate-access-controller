@@ -197,6 +197,8 @@ async def update_access_link(
 ) -> AccessLinkResponse:
     """Update an existing access link"""
     try:
+        from app.models.notification_provider import NotificationProvider
+
         # Get the link
         query = select(AccessLink).filter(AccessLink.id == link_id)
         result = await db.execute(query)
@@ -211,6 +213,8 @@ async def update_access_link(
         # Capture old values for audit logging
         update_dict = update_data.model_dump(exclude_unset=True)
         original_status = link.status
+        notification_provider_ids = update_dict.pop("notification_provider_ids", None)
+
         changes = {}
         for field, new_value in update_dict.items():
             old_value = getattr(link, field)
@@ -220,9 +224,29 @@ async def update_access_link(
                     "new": AuditService.serialize_value(new_value),
                 }
 
-        # Update fields
+        # Update fields (excluding notification_provider_ids which is a relationship)
         for field, value in update_dict.items():
             setattr(link, field, value)
+
+        # Update notification providers if specified
+        if notification_provider_ids is not None:
+            from typing import cast
+
+            result = await db.execute(
+                select(NotificationProvider)
+                .where(NotificationProvider.id.in_(notification_provider_ids))
+                .where(NotificationProvider.is_deleted == False)  # noqa: E712
+            )
+            providers = cast(list[NotificationProvider], list(result.scalars().all()))
+            link.notification_providers = providers
+
+            # Track notification provider change in audit log
+            old_provider_ids = [p.id for p in link.notification_providers]
+            if set(old_provider_ids) != set(notification_provider_ids):
+                changes["notification_providers"] = {
+                    "old": old_provider_ids,
+                    "new": notification_provider_ids,
+                }
 
         # Auto-calculate status based on updated fields
         status_changed = link.update_status()
@@ -256,7 +280,7 @@ async def update_access_link(
         # Log the update with status transition info
         log_data = {
             "link_id": link_id,
-            "updates": update_dict,
+            "updates": {**update_dict, "notification_providers": len(link.notification_providers)},
         }
         if status_changed:
             log_data["status_transition"] = f"{original_status} → {link.status}"

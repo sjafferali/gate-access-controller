@@ -4,6 +4,11 @@ from app.models.access_link import AccessLink, LinkPurpose, LinkStatus
 from app.models.access_log import AccessLog, AccessStatus, DenialReason
 from app.models.audit_log import AuditAction, AuditLog, ResourceType
 from app.models.base_model import BaseModelMixin, TimestampMixin, UUIDMixin
+from app.models.notification_provider import (
+    NotificationProvider,
+    NotificationProviderType,
+    link_notification_providers,
+)
 from app.models.system_settings import SystemSettings
 
 __all__ = [
@@ -23,6 +28,10 @@ __all__ = [
     "AuditLog",
     "AuditAction",
     "ResourceType",
+    # Notification Provider
+    "NotificationProvider",
+    "NotificationProviderType",
+    "link_notification_providers",
     # System Settings
     "SystemSettings",
 ]

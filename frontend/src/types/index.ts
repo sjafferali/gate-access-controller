@@ -29,6 +29,7 @@ export interface AccessLink {
   remaining_uses?: number
   is_active: boolean
   auto_open: boolean
+  notification_provider_ids: string[]
   created_at: string
   updated_at: string
   is_deleted: boolean
@@ -46,6 +47,7 @@ export interface CreateAccessLink {
   max_uses?: number
   auto_open?: boolean
   link_code?: string
+  notification_provider_ids?: string[]
 }
 
 export interface UpdateAccessLink {
@@ -56,6 +58,7 @@ export interface UpdateAccessLink {
   expiration?: string
   max_uses?: number
   auto_open?: boolean
+  notification_provider_ids?: string[]
 }
 
 // Access Log Types
@@ -180,6 +183,8 @@ export interface SystemSettings {
   oidc_redirect_uri: string | null
   oidc_scopes: string | null
   oidc_client_secret_set: boolean
+  default_notification_provider_ids: string[]
+  quick_link_notification_provider_ids: string[]
   created_at: string
   updated_at: string
 }
@@ -198,6 +203,8 @@ export interface SystemSettingsUpdate {
   oidc_client_secret?: string | null
   oidc_redirect_uri?: string | null
   oidc_scopes?: string | null
+  default_notification_provider_ids?: string[]
+  quick_link_notification_provider_ids?: string[]
 }
 
 // Audit Log Types
@@ -245,4 +252,57 @@ export interface User {
   user_id: string
   is_default_user: boolean
   is_authenticated: boolean
+}
+
+// Notification Provider Types
+export enum NotificationProviderType {
+  PUSHOVER = 'pushover',
+  WEBHOOK = 'webhook',
+}
+
+export interface PushoverConfig {
+  user_key: string
+  api_token: string
+  priority: number
+  sound?: string
+  device?: string
+}
+
+export interface WebhookConfig {
+  url: string
+  method: string
+  headers: Record<string, string>
+  body_template?: string
+}
+
+export interface NotificationProvider {
+  id: string
+  name: string
+  provider_type: NotificationProviderType
+  config: PushoverConfig | WebhookConfig
+  enabled: boolean
+  created_at: string
+  updated_at: string
+  is_deleted: boolean
+  deleted_at?: string
+}
+
+export interface CreateNotificationProvider {
+  name: string
+  provider_type: NotificationProviderType
+  config: PushoverConfig | WebhookConfig
+  enabled?: boolean
+}
+
+export interface UpdateNotificationProvider {
+  name?: string
+  config?: PushoverConfig | WebhookConfig
+  enabled?: boolean
+}
+
+export interface NotificationProviderSummary {
+  id: string
+  name: string
+  provider_type: NotificationProviderType
+  enabled: boolean
 }

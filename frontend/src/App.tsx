@@ -11,6 +11,7 @@ import EditLink from '@/pages/EditLink'
 import LinkDetails from '@/pages/LinkDetails'
 import AccessPortal from '@/pages/AccessPortal'
 import Settings from '@/pages/Settings'
+import NotificationProviders from '@/pages/NotificationProviders'
 import Login from '@/pages/Login'
 import AuthCallback from '@/pages/AuthCallback'
 import { preloadLinkUrlSettings } from '@/utils/linkUrl'
@@ -39,6 +40,7 @@ function App() {
           <Route path="links/:linkId" element={<LinkDetails />} />
           <Route path="logs" element={<AccessLogs />} />
           <Route path="audit-logs" element={<AuditLogs />} />
+          <Route path="notification-providers" element={<NotificationProviders />} />
           <Route path="settings" element={<Settings />} />
         </Route>
       </Routes>

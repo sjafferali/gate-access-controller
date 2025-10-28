@@ -16,6 +16,7 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 if TYPE_CHECKING:
     from app.models.access_log import AccessLog
+    from app.models.notification_provider import NotificationProvider
 
 from app.db.base import Base
 from app.models.base_model import BaseModelMixin
@@ -171,6 +172,12 @@ class AccessLink(Base, BaseModelMixin):
         "AccessLog",
         back_populates="link",
         cascade="all, delete-orphan",
+        lazy="selectin",
+    )
+    notification_providers: Mapped[list["NotificationProvider"]] = relationship(
+        "NotificationProvider",
+        secondary="link_notification_providers",
+        back_populates="links",
         lazy="selectin",
     )
 
