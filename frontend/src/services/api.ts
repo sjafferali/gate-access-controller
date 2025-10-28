@@ -142,8 +142,23 @@ export const accessLinksApi = {
     }
 
     // Generate timestamp for the link name and notes
+    // Format as "MM-DD-YYYY HH.MM.SS" to avoid validation issues with "/" and ":" characters
     const now = new Date()
-    const timestamp = now.toLocaleString('en-US', {
+    const month = String(now.getMonth() + 1).padStart(2, '0')
+    const day = String(now.getDate()).padStart(2, '0')
+    const year = now.getFullYear()
+    const hours = String(now.getHours()).padStart(2, '0')
+    const minutes = String(now.getMinutes()).padStart(2, '0')
+    const seconds = String(now.getSeconds()).padStart(2, '0')
+    const timestamp = `${month}-${day}-${year} ${hours}.${minutes}.${seconds}`
+
+    // Calculate expiration time
+    const activeOn = new Date()
+    const expiration = new Date(activeOn.getTime() + defaultExpirationHours * 60 * 60 * 1000)
+
+    // Create quick link data
+    // Using the formatted timestamp for both name and notes (more readable format)
+    const readableTimestamp = now.toLocaleString('en-US', {
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',
@@ -153,14 +168,9 @@ export const accessLinksApi = {
       hour12: false,
     })
 
-    // Calculate expiration time
-    const activeOn = new Date()
-    const expiration = new Date(activeOn.getTime() + defaultExpirationHours * 60 * 60 * 1000)
-
-    // Create quick link data
     const quickLinkData: CreateAccessLink = {
       name: `quicklink ${timestamp}`,
-      notes: `Quick link generated on ${timestamp}. Expires in ${defaultExpirationHours} hours with ${defaultMaxUses} max use(s).`,
+      notes: `Quick link generated on ${readableTimestamp}. Expires in ${defaultExpirationHours} hours with ${defaultMaxUses} max use(s).`,
       purpose: LinkPurpose.OTHER,
       active_on: activeOn.toISOString(),
       expiration: expiration.toISOString(),

@@ -24,7 +24,7 @@ def column_exists(table_name: str, column_name: str) -> bool:
     try:
         bind = op.get_bind()
         inspector = inspect(bind)
-        columns = [col['name'] for col in inspector.get_columns(table_name)]
+        columns = [col["name"] for col in inspector.get_columns(table_name)]
         return column_name in columns
     except Exception:
         return False
@@ -59,7 +59,10 @@ def upgrade() -> None:
                 comment="Type of notification provider (pushover, webhook)",
             ),
             sa.Column(
-                "config", sa.JSON(), nullable=False, comment="Provider-specific configuration as JSON"
+                "config",
+                sa.JSON(),
+                nullable=False,
+                comment="Provider-specific configuration as JSON",
             ),
             sa.Column(
                 "enabled", sa.Boolean(), nullable=False, comment="Whether this provider is enabled"
@@ -112,7 +115,9 @@ def upgrade() -> None:
             sa.Column("link_id", sa.String(length=36), nullable=False),
             sa.Column("provider_id", sa.String(length=36), nullable=False),
             sa.ForeignKeyConstraint(["link_id"], ["access_links.id"], ondelete="CASCADE"),
-            sa.ForeignKeyConstraint(["provider_id"], ["notification_providers.id"], ondelete="CASCADE"),
+            sa.ForeignKeyConstraint(
+                ["provider_id"], ["notification_providers.id"], ondelete="CASCADE"
+            ),
             sa.PrimaryKeyConstraint("link_id", "provider_id"),
         )
     # Use batch operations for SQLite compatibility
@@ -170,7 +175,7 @@ def upgrade() -> None:
                 "default_notification_provider_ids",
                 sa.JSON(),
                 nullable=False,
-                server_default='[]',
+                server_default="[]",
                 comment="Default notification provider IDs for new links",
             )
         )
@@ -181,7 +186,7 @@ def upgrade() -> None:
                 "quick_link_notification_provider_ids",
                 sa.JSON(),
                 nullable=False,
-                server_default='[]',
+                server_default="[]",
                 comment="Notification provider IDs for quick links",
             )
         )
