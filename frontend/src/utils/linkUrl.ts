@@ -38,15 +38,23 @@ async function getLinksUrlDomain(): Promise<string | null> {
  * If links_url is configured, uses that domain. Otherwise, uses current domain.
  *
  * @param linkCode - The access link code
- * @returns Full URL for the access link (e.g., "https://x.com/ABC123")
+ * @returns Full URL for the access link (e.g., "http://x.com/ABC123" or "https://x.com/ABC123")
  */
 export async function generateLinkUrl(linkCode: string): Promise<string> {
   const linksUrl = await getLinksUrlDomain()
 
   if (linksUrl) {
     // Use configured links URL domain
-    // Ensure it has protocol
-    const domain = linksUrl.startsWith('http') ? linksUrl : `https://${linksUrl}`
+    // Respect the protocol if specified, don't force HTTPS
+    let domain: string
+    if (linksUrl.startsWith('http://') || linksUrl.startsWith('https://')) {
+      // Protocol already specified, use as-is
+      domain = linksUrl
+    } else {
+      // No protocol specified, default to https for security
+      // but allow users to explicitly specify http:// if needed
+      domain = `https://${linksUrl}`
+    }
     // Remove trailing slash if present
     const baseDomain = domain.replace(/\/$/, '')
     return `${baseDomain}/access/${linkCode}`
@@ -70,7 +78,16 @@ export function generateLinkUrlSync(linkCode: string): string {
 
   if (linksUrl) {
     // Use configured links URL domain
-    const domain = linksUrl.startsWith('http') ? linksUrl : `https://${linksUrl}`
+    // Respect the protocol if specified, don't force HTTPS
+    let domain: string
+    if (linksUrl.startsWith('http://') || linksUrl.startsWith('https://')) {
+      // Protocol already specified, use as-is
+      domain = linksUrl
+    } else {
+      // No protocol specified, default to https for security
+      // but allow users to explicitly specify http:// if needed
+      domain = `https://${linksUrl}`
+    }
     const baseDomain = domain.replace(/\/$/, '')
     return `${baseDomain}/access/${linkCode}`
   }
