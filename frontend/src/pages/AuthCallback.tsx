@@ -36,8 +36,8 @@ export default function AuthCallback() {
         // Refresh user and wait for the state to update
         await refreshUser()
 
-        // Add a small delay to ensure auth state propagates
-        await new Promise((resolve) => setTimeout(resolve, 100))
+        // Add a small delay to ensure auth state propagates and prevent race conditions
+        await new Promise((resolve) => setTimeout(resolve, 200))
 
         // Navigate to dashboard and show success message
         toast.success('Successfully authenticated')

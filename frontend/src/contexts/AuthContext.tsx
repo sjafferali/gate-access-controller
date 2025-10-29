@@ -3,6 +3,7 @@ import { authApi } from '@/services/api'
 import type { User } from '@/types'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
+import { AxiosError } from 'axios'
 
 interface AuthContextType {
   user: User | null
@@ -28,7 +29,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(currentUser)
       return currentUser
     } catch (error) {
-      console.error('Failed to fetch user:', error)
+      // Silently handle authentication errors - these are expected when not logged in
+      // The error will be logged but not shown to the user
+      if (error instanceof AxiosError && error.response?.status !== 401) {
+        console.error('Failed to fetch user:', error)
+      } else if (!(error instanceof AxiosError)) {
+        console.error('Failed to fetch user:', error)
+      }
       setUser(null)
       return null
     }

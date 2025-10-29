@@ -58,8 +58,13 @@ apiClient.interceptors.response.use(
     const errorData = error.response?.data
     const message = errorData?.detail || errorData?.message || error.message
 
-    // Don't show toast for validation errors or 404s in some cases
-    if (error.response?.status !== 422 && error.response?.status !== 404) {
+    // Don't show toast for validation errors (422), not found (404), or authentication errors (401)
+    // 401 errors are handled by the auth system and shouldn't show toast notifications
+    if (
+      error.response?.status !== 422 &&
+      error.response?.status !== 404 &&
+      error.response?.status !== 401
+    ) {
       toast.error(message)
     }
 
