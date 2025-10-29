@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   FiCopy,
   FiZap,
@@ -22,6 +22,7 @@ import SearchableSelect from '@/components/form/SearchableSelect'
 
 export default function EditLink() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const { linkId } = useParams<{ linkId: string }>()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
@@ -115,6 +116,9 @@ export default function EditLink() {
     mutationFn: (data: UpdateAccessLink) => accessLinksApi.update(linkId!, data),
     onSuccess: (data) => {
       toast.success('Access link updated successfully')
+      // Invalidate both the specific link and the links list queries
+      void queryClient.invalidateQueries({ queryKey: ['link', linkId] })
+      void queryClient.invalidateQueries({ queryKey: ['links'] })
       void navigate(`/links/${data.id}`)
     },
     onError: () => {

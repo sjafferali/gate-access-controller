@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   FiCalendar,
@@ -20,6 +20,7 @@ import SearchableSelect from '@/components/form/SearchableSelect'
 
 export default function CreateLink() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [useCustomCode, setUseCustomCode] = useState(false)
   const [selectedProviders, setSelectedProviders] = useState<string[]>([])
@@ -113,6 +114,8 @@ export default function CreateLink() {
     mutationFn: accessLinksApi.create,
     onSuccess: (data) => {
       toast.success('Access link created successfully')
+      // Invalidate the links query to refresh the list when navigating back
+      void queryClient.invalidateQueries({ queryKey: ['links'] })
       void navigate(`/links/${data.id}`)
     },
     onError: () => {

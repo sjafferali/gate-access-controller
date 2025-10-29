@@ -18,8 +18,8 @@ def calculate_link_status(link: AccessLink) -> LinkStatus:
     that needs to determine a link's status should call this function.
 
     Status determination logic (in order of priority):
-    1. DISABLED - if link is manually disabled (preserves manual override)
-    2. INACTIVE - if link is deleted
+    1. INACTIVE - if link is deleted (deleted links are always inactive)
+    2. DISABLED - if link is manually disabled (preserves manual override)
     3. INACTIVE - if current time is before active_on (not yet active)
     4. INACTIVE - if current time is after expiration (expired)
     5. INACTIVE - if granted_count >= max_uses (usage limit reached)
@@ -43,15 +43,16 @@ def calculate_link_status(link: AccessLink) -> LinkStatus:
         The caller is responsible for updating the link's status field
         and persisting changes to the database.
     """
-    # Priority 1: Preserve manual DISABLED status
-    # If a link is manually disabled, it stays disabled until explicitly enabled
-    if link.status == LinkStatus.DISABLED:
-        return LinkStatus.DISABLED
-
-    # Priority 2: Deleted links are always INACTIVE
-    # Deleted links cannot be reactivated
+    # Priority 1: Deleted links are always INACTIVE
+    # Deleted links cannot be reactivated and override all other statuses
     if link.is_deleted:
         return LinkStatus.INACTIVE
+
+    # Priority 2: Preserve manual DISABLED status
+    # If a link is manually disabled, it stays disabled until explicitly enabled
+    # (unless it's deleted, which takes precedence)
+    if link.status == LinkStatus.DISABLED:
+        return LinkStatus.DISABLED
 
     # Get current time for temporal checks
     now = datetime.now(UTC)
