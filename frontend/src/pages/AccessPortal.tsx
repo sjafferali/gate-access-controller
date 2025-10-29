@@ -17,8 +17,12 @@ export default function AccessPortal() {
   const { data, isLoading, error } = useQuery({
     queryKey: ['validate', linkCode],
     queryFn: () => validationApi.validateLink(linkCode!),
-    enabled: !!linkCode,
+    enabled: !!linkCode && !hasTriggeredAutoOpen, // Disable query after auto-open is triggered
     retry: false,
+    staleTime: 1000 * 60 * 5, // Keep data fresh for 5 minutes to prevent refetching
+    gcTime: 1000 * 60 * 10, // Keep in cache for 10 minutes
+    refetchOnMount: false, // Don't refetch when component mounts
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   })
 
   // Helper function to redirect to gate opened page
@@ -39,10 +43,8 @@ export default function AccessPortal() {
     mutationFn: () => validationApi.requestAccess(linkCode!),
     onSuccess: (response) => {
       toast.success(response.message)
-      // Redirect after a short delay to ensure the toast is visible
-      setTimeout(() => {
-        redirectToGateOpened(data?.name, data?.notes)
-      }, 1500)
+      // Immediately navigate to prevent duplicate requests
+      redirectToGateOpened(data?.name, data?.notes)
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       const message = error.response?.data?.message || 'Access denied'
@@ -56,24 +58,23 @@ export default function AccessPortal() {
     if (data?.is_valid && data?.auto_open && !hasTriggeredAutoOpen) {
       setHasTriggeredAutoOpen(true)
 
-      // Request access automatically
-      void validationApi
-        .requestAccess(linkCode!)
-        .then((response) => {
-          toast.success(response.message)
-          // Redirect after the gate opens
-          setTimeout(() => {
-            redirectToGateOpened(data?.name, data?.notes)
-          }, 2000)
-        })
-        .catch((error: AxiosError<ErrorResponse>) => {
-          const message = error.response?.data?.message || 'Access denied'
-          toast.error(message)
-        })
+      // For auto-open links, the validate endpoint already triggered the gate
+      // Show the success message from the API response
+      if (data.message && data.message.includes('opening')) {
+        toast.success('Gate opened successfully!')
+      }
+
+      // Redirect after a brief delay to show the UI
+      setTimeout(() => {
+        redirectToGateOpened(data?.name, data?.notes)
+      }, 1500)
     }
-  }, [data, linkCode, hasTriggeredAutoOpen, redirectToGateOpened])
+  }, [data, hasTriggeredAutoOpen, redirectToGateOpened])
 
   const handleRequestAccess = () => {
+    if (isRequesting || accessMutation.isPending) {
+      return // Prevent duplicate requests
+    }
     setIsRequesting(true)
     accessMutation.mutate()
   }
@@ -180,10 +181,14 @@ export default function AccessPortal() {
             ) : (
               <button
                 onClick={handleRequestAccess}
-                disabled={isRequesting}
+                disabled={isRequesting || accessMutation.isSuccess}
                 className="w-full rounded-lg bg-primary-600 px-6 py-4 text-base font-semibold text-white shadow-lg transition-all hover:bg-primary-700 focus:outline-none focus:ring-4 focus:ring-primary-500 focus:ring-offset-2 active:scale-95 disabled:cursor-not-allowed disabled:opacity-50 sm:text-lg"
               >
-                {isRequesting ? 'Opening Gate...' : 'Open Gate'}
+                {accessMutation.isSuccess
+                  ? 'Gate Opened!'
+                  : isRequesting
+                    ? 'Opening Gate...'
+                    : 'Open Gate'}
               </button>
             )
           ) : (

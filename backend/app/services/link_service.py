@@ -82,7 +82,9 @@ class LinkService:
                 .where(NotificationProvider.is_deleted == False)  # noqa: E712
             )
             providers = list(result.scalars().all())
-            link.notification_providers = providers
+            # Use extend or append instead of direct assignment to avoid lazy loading issues
+            for provider in providers:
+                link.notification_providers.append(provider)
 
         await self.db.commit()
         await self.db.refresh(link)

@@ -19,6 +19,7 @@ from app.services.link_service import LinkService
 from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
 from sqlalchemy import and_, desc, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 router = APIRouter()
 
@@ -56,8 +57,8 @@ async def list_access_links(
 ) -> AccessLinkListResponse:
     """List all access links with pagination and filtering"""
     try:
-        # Build query
-        query = select(AccessLink)
+        # Build query with eager loading of notification providers
+        query = select(AccessLink).options(selectinload(AccessLink.notification_providers))
 
         # Apply filters
         filters = []
@@ -101,7 +102,7 @@ async def list_access_links(
         pages = (total + size - 1) // size if size > 0 else 0
 
         return AccessLinkListResponse(
-            items=[AccessLinkResponse.model_validate(item) for item in items],
+            items=[AccessLinkResponse.from_orm(item) for item in items],
             total=total,
             page=page,
             size=size,
@@ -142,7 +143,7 @@ async def create_access_link(
             user_id=user.user_id,
         )
 
-        return AccessLinkResponse.model_validate(link)
+        return AccessLinkResponse.from_orm(link)
 
     except ValueError as e:
         logger.warning("Invalid link data", error=str(e))
@@ -165,7 +166,11 @@ async def get_access_link(
 ) -> AccessLinkResponse:
     """Get a specific access link by ID"""
     try:
-        query = select(AccessLink).filter(AccessLink.id == link_id)
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link_id)
+        )
         result = await db.execute(query)
         link = result.scalar_one_or_none()
 
@@ -175,7 +180,7 @@ async def get_access_link(
                 detail="Access link not found",
             )
 
-        return AccessLinkResponse.model_validate(link)
+        return AccessLinkResponse.from_orm(link)
 
     except HTTPException:
         raise
@@ -199,8 +204,12 @@ async def update_access_link(
     try:
         from app.models.notification_provider import NotificationProvider
 
-        # Get the link
-        query = select(AccessLink).filter(AccessLink.id == link_id)
+        # Get the link with notification providers eagerly loaded
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link_id)
+        )
         result = await db.execute(query)
         link = result.scalar_one_or_none()
 
@@ -232,16 +241,21 @@ async def update_access_link(
         if notification_provider_ids is not None:
             from typing import cast
 
+            # Capture old provider IDs before updating
+            old_provider_ids = [p.id for p in link.notification_providers]
+
             result = await db.execute(
                 select(NotificationProvider)
                 .where(NotificationProvider.id.in_(notification_provider_ids))
                 .where(NotificationProvider.is_deleted == False)  # noqa: E712
             )
             providers = cast(list[NotificationProvider], list(result.scalars().all()))
-            link.notification_providers = providers
+
+            # Use clear and extend to properly update the relationship in async context
+            link.notification_providers.clear()
+            link.notification_providers.extend(providers)
 
             # Track notification provider change in audit log
-            old_provider_ids = [p.id for p in link.notification_providers]
             if set(old_provider_ids) != set(notification_provider_ids):
                 changes["notification_providers"] = {
                     "old": old_provider_ids,
@@ -288,7 +302,7 @@ async def update_access_link(
         else:
             logger.info("Access link updated", **log_data)
 
-        return AccessLinkResponse.model_validate(link)
+        return AccessLinkResponse.from_orm(link)
 
     except HTTPException:
         raise
@@ -315,8 +329,12 @@ async def delete_access_link(
     This operation is NOT reversible.
     """
     try:
-        # Get the link
-        query = select(AccessLink).filter(AccessLink.id == link_id)
+        # Get the link with notification providers eagerly loaded
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link_id)
+        )
         result = await db.execute(query)
         link = result.scalar_one_or_none()
 
@@ -442,7 +460,7 @@ async def regenerate_link_code(
 
         logger.info("Link code regenerated", link_id=link_id, new_code=link.link_code)
 
-        return AccessLinkResponse.model_validate(link)
+        return AccessLinkResponse.from_orm(link)
 
     except ValueError as e:
         logger.warning("Cannot regenerate link code", link_id=link_id, error=str(e))
@@ -472,8 +490,12 @@ async def disable_access_link(
     and prevents automatic status recalculation. Can be re-enabled.
     """
     try:
-        # Get the link
-        query = select(AccessLink).filter(AccessLink.id == link_id)
+        # Get the link with notification providers eagerly loaded
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link_id)
+        )
         result = await db.execute(query)
         link = result.scalar_one_or_none()
 
@@ -513,7 +535,7 @@ async def disable_access_link(
             link_name=link.name,
         )
 
-        return AccessLinkResponse.model_validate(link)
+        return AccessLinkResponse.from_orm(link)
 
     except HTTPException:
         raise
@@ -545,8 +567,12 @@ async def enable_access_link(
     based on expiration, active_on, max_uses, etc.
     """
     try:
-        # Get the link
-        query = select(AccessLink).filter(AccessLink.id == link_id)
+        # Get the link with notification providers eagerly loaded
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link_id)
+        )
         result = await db.execute(query)
         link = result.scalar_one_or_none()
 
@@ -593,7 +619,7 @@ async def enable_access_link(
         else:
             logger.info("Access link enable called (no status change)", **log_data)
 
-        return AccessLinkResponse.model_validate(link)
+        return AccessLinkResponse.from_orm(link)
 
     except HTTPException:
         raise

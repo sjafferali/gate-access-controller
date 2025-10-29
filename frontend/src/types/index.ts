@@ -30,6 +30,12 @@ export interface AccessLink {
   is_active: boolean
   auto_open: boolean
   notification_provider_ids: string[]
+  notification_providers?: Array<{
+    id: string
+    name: string
+    provider_type: NotificationProviderType
+    enabled: boolean
+  }>
   created_at: string
   updated_at: string
   is_deleted: boolean

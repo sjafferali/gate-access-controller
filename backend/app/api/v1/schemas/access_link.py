@@ -1,10 +1,13 @@
 """Pydantic schemas for Access Link API endpoints"""
 
 from datetime import UTC, datetime
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from app.models.access_link import LinkPurpose, LinkStatus
 from pydantic import BaseModel, Field, field_validator, validator
+
+if TYPE_CHECKING:
+    pass
 
 
 class AccessLinkBase(BaseModel):
@@ -137,6 +140,9 @@ class AccessLinkResponse(AccessLinkBase):
     owner_user_name: str | None = None
     last_accessed_at: datetime | None = None
     notification_provider_ids: list[str] = Field(default_factory=list)
+    notification_providers: list[dict[str, Any]] = Field(
+        default_factory=list, description="Full notification provider details"
+    )
 
     class Config:
         from_attributes = True
@@ -144,13 +150,28 @@ class AccessLinkResponse(AccessLinkBase):
     @classmethod
     def from_orm(cls, obj: Any) -> "AccessLinkResponse":
         """Custom from_orm to handle notification_providers relationship"""
-        # Get notification provider IDs from the relationship
-        notification_provider_ids = [p.id for p in obj.notification_providers]
+        from app.api.v1.schemas.notification_provider import NotificationProviderSummary
+
+        # Get notification provider IDs and full details from the relationship
+        notification_provider_ids = []
+        notification_providers = []
+
+        for provider in obj.notification_providers:
+            notification_provider_ids.append(provider.id)
+            # Convert to NotificationProviderSummary and then to dict
+            summary = NotificationProviderSummary(
+                id=provider.id,
+                name=provider.name,
+                provider_type=provider.provider_type,
+                enabled=provider.enabled,
+            )
+            notification_providers.append(summary.model_dump())
 
         # Create the response object
         data = {
             **{k: getattr(obj, k) for k in obj.__table__.columns.keys()},
             "notification_provider_ids": notification_provider_ids,
+            "notification_providers": notification_providers,
             "remaining_uses": obj.remaining_uses,
         }
         return cls(**data)
