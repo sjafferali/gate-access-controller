@@ -151,14 +151,23 @@ class LinkService:
         Returns:
             tuple: (is_valid, message, link_object)
         """
+        from sqlalchemy import select
+
+        from app.models.system_settings import SystemSettings
+
         # Get the link
         link = await self.get_link_by_code(link_code)
 
         if not link:
             return False, "Invalid link code", None
 
-        # Check if link can grant access
-        can_grant, reason = link.can_grant_access()
+        # Get cooldown setting from system settings
+        result = await self.db.execute(select(SystemSettings).limit(1))
+        settings = result.scalar_one_or_none()
+        cooldown_seconds = settings.link_cooldown_seconds if settings else 60
+
+        # Check if link can grant access with the configured cooldown
+        can_grant, reason = link.can_grant_access(cooldown_seconds)
 
         if not can_grant:
             return False, reason, link

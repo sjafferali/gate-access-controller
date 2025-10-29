@@ -45,6 +45,12 @@ class SystemSettings(Base, BaseModelMixin):
         default=5,
         comment="Duration to keep gate open in seconds",
     )
+    link_cooldown_seconds: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=60,
+        comment="Cooldown time in seconds before a link can be used again",
+    )
 
     # URL Settings
     admin_url: Mapped[str | None] = mapped_column(

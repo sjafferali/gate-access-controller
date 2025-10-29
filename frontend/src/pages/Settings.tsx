@@ -39,6 +39,7 @@ interface SettingsData {
   webhookUrl: string
   webhookTimeout: number
   webhookRetries: number
+  linkCooldownSeconds: number
   ipWhitelist: string
   requireAuthentication: boolean
 
@@ -77,6 +78,7 @@ const defaultSettings: SettingsData = {
   webhookUrl: '',
   webhookTimeout: 5000,
   webhookRetries: 3,
+  linkCooldownSeconds: 60,
   ipWhitelist: '',
   requireAuthentication: false,
 
@@ -138,6 +140,7 @@ export default function Settings() {
           webhookUrl: apiSettings.webhook_url || '',
           webhookTimeout: apiSettings.webhook_timeout * 1000, // Convert seconds to ms for UI
           webhookRetries: apiSettings.webhook_retries,
+          linkCooldownSeconds: apiSettings.link_cooldown_seconds || 60,
           adminUrl: apiSettings.admin_url || '',
           linksUrl: apiSettings.links_url || '',
           oidcEnabled: apiSettings.oidc_enabled || false,
@@ -208,6 +211,7 @@ export default function Settings() {
         webhook_timeout: Math.floor(data.webhookTimeout / 1000), // Convert ms to seconds
         webhook_retries: data.webhookRetries,
         gate_open_duration_seconds: 5, // Default for now
+        link_cooldown_seconds: data.linkCooldownSeconds,
         admin_url: data.adminUrl || null,
         links_url: data.linksUrl || null,
         oidc_enabled: data.oidcEnabled,
@@ -839,6 +843,35 @@ export default function Settings() {
                         <p className="mt-1 text-sm text-red-600">{errors.webhookRetries.message}</p>
                       )}
                     </div>
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="linkCooldownSeconds"
+                      className="mb-1 block text-sm font-medium text-gray-700"
+                    >
+                      <FiClock className="mr-1 inline text-gray-500" />
+                      Link Cooldown (seconds)
+                    </label>
+                    <input
+                      {...register('linkCooldownSeconds', {
+                        min: { value: 0, message: 'Cannot be negative' },
+                        max: { value: 3600, message: 'Maximum 3600 seconds (1 hour)' },
+                        valueAsNumber: true,
+                      })}
+                      type="number"
+                      min="0"
+                      max="3600"
+                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
+                    />
+                    <p className="mt-1 text-xs text-gray-500">
+                      How long to wait before a link can be used again (0 to disable rate limiting)
+                    </p>
+                    {errors.linkCooldownSeconds && (
+                      <p className="mt-1 text-sm text-red-600">
+                        {errors.linkCooldownSeconds.message}
+                      </p>
+                    )}
                   </div>
 
                   <div>

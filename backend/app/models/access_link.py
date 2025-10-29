@@ -228,9 +228,12 @@ class AccessLink(Base, BaseModelMixin):
         """Get total number of times the link was used"""
         return self.granted_count + self.denied_count
 
-    def can_grant_access(self) -> tuple[bool, str]:
+    def can_grant_access(self, cooldown_seconds: int = 60) -> tuple[bool, str]:
         """
         Check if the link can grant access.
+
+        Args:
+            cooldown_seconds: The cooldown time in seconds (default 60)
 
         Returns:
             tuple[bool, str]: (can_grant, reason_if_denied)
@@ -242,8 +245,8 @@ class AccessLink(Base, BaseModelMixin):
         if self.status == LinkStatus.DISABLED:
             return False, "Link has been disabled"
 
-        # Check rate limiting - link can only be used once per 60 seconds
-        if self.last_accessed_at:
+        # Check rate limiting - link can only be used once per cooldown period
+        if cooldown_seconds > 0 and self.last_accessed_at:
             now = datetime.now(UTC)
             last_accessed = (
                 self.last_accessed_at
@@ -252,8 +255,8 @@ class AccessLink(Base, BaseModelMixin):
             )
             time_since_last_access = (now - last_accessed).total_seconds()
 
-            if time_since_last_access < 60:
-                wait_time = int(60 - time_since_last_access)
+            if time_since_last_access < cooldown_seconds:
+                wait_time = int(cooldown_seconds - time_since_last_access)
                 return (
                     False,
                     f"Link was recently used. Please wait {wait_time} seconds before trying again",

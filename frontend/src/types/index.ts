@@ -175,6 +175,7 @@ export interface SystemSettings {
   webhook_timeout: number
   webhook_retries: number
   gate_open_duration_seconds: number
+  link_cooldown_seconds: number
   admin_url: string | null
   links_url: string | null
   oidc_enabled: boolean
@@ -195,6 +196,7 @@ export interface SystemSettingsUpdate {
   webhook_timeout?: number
   webhook_retries?: number
   gate_open_duration_seconds?: number
+  link_cooldown_seconds?: number
   admin_url?: string | null
   links_url?: string | null
   oidc_enabled?: boolean

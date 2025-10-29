@@ -18,6 +18,12 @@ class SystemSettingsBase(BaseModel):
         le=60,
         description="Duration to keep gate open in seconds",
     )
+    link_cooldown_seconds: int = Field(
+        60,
+        ge=0,
+        le=3600,
+        description="Cooldown time in seconds before a link can be used again (0 to disable, max 3600)",
+    )
 
     # URL Settings
     admin_url: str | None = Field(

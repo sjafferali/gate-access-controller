@@ -40,6 +40,7 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
                 webhook_timeout=10,
                 webhook_retries=3,
                 gate_open_duration_seconds=5,
+                link_cooldown_seconds=60,
                 admin_url=None,
                 links_url=None,
                 oidc_enabled=False,
@@ -60,6 +61,7 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
             webhook_timeout=settings.webhook_timeout,
             webhook_retries=settings.webhook_retries,
             gate_open_duration_seconds=settings.gate_open_duration_seconds,
+            link_cooldown_seconds=settings.link_cooldown_seconds,
             admin_url=settings.admin_url,
             links_url=settings.links_url,
             oidc_enabled=settings.oidc_enabled,
@@ -116,6 +118,7 @@ async def save_system_settings(
             existing_settings.webhook_timeout = settings_data.webhook_timeout
             existing_settings.webhook_retries = settings_data.webhook_retries
             existing_settings.gate_open_duration_seconds = settings_data.gate_open_duration_seconds
+            existing_settings.link_cooldown_seconds = settings_data.link_cooldown_seconds
 
             # Update URL settings
             existing_settings.admin_url = settings_data.admin_url
@@ -150,6 +153,7 @@ async def save_system_settings(
                 webhook_timeout=existing_settings.webhook_timeout,
                 webhook_retries=existing_settings.webhook_retries,
                 gate_open_duration_seconds=existing_settings.gate_open_duration_seconds,
+                link_cooldown_seconds=existing_settings.link_cooldown_seconds,
                 admin_url=existing_settings.admin_url,
                 links_url=existing_settings.links_url,
                 oidc_enabled=existing_settings.oidc_enabled,
@@ -169,6 +173,7 @@ async def save_system_settings(
                 webhook_timeout=settings_data.webhook_timeout,
                 webhook_retries=settings_data.webhook_retries,
                 gate_open_duration_seconds=settings_data.gate_open_duration_seconds,
+                link_cooldown_seconds=settings_data.link_cooldown_seconds,
                 admin_url=settings_data.admin_url,
                 links_url=settings_data.links_url,
                 oidc_enabled=settings_data.oidc_enabled,
@@ -197,6 +202,7 @@ async def save_system_settings(
                 webhook_timeout=new_settings.webhook_timeout,
                 webhook_retries=new_settings.webhook_retries,
                 gate_open_duration_seconds=new_settings.gate_open_duration_seconds,
+                link_cooldown_seconds=new_settings.link_cooldown_seconds,
                 admin_url=new_settings.admin_url,
                 links_url=new_settings.links_url,
                 oidc_enabled=new_settings.oidc_enabled,
