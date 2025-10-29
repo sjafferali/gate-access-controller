@@ -72,9 +72,7 @@ export default function GateOpened() {
           {/* Main Message - styled like the opening screen */}
           <div className="mb-6 rounded-md bg-green-50 p-4">
             <div className="flex items-center justify-center">
-              <p className="text-sm font-semibold text-green-800 sm:text-base">
-                Gate is opening
-              </p>
+              <p className="text-sm font-semibold text-green-800 sm:text-base">Gate is opening</p>
             </div>
             <p className="mt-2 text-center text-xs text-green-700 sm:text-sm">
               You may proceed once the gate opens.

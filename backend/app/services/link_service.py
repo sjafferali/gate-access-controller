@@ -101,6 +101,8 @@ class LinkService:
         await self.db.commit()
 
         # Refresh the link with eagerly loaded notification providers
+        from typing import cast
+
         from sqlalchemy.orm import selectinload
 
         query = (
@@ -109,7 +111,7 @@ class LinkService:
             .filter(AccessLink.id == link.id)
         )
         result = await self.db.execute(query)
-        link = result.scalar_one()
+        link = cast(AccessLink, result.scalar_one())
 
         # Create audit log entry
         await AuditService.log_link_created(
