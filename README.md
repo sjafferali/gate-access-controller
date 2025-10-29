@@ -100,7 +100,7 @@ See [Configuration Guide](docs/CONFIGURATION.md) for all available options.
 
 ### Sharing Access
 
-Share links in format: `http://your-server:8080/access/LINKCODE`
+Share links in format: `http://your-server:8080/l/LINKCODE`
 
 When someone visits:
 1. They see the link details

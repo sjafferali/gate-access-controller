@@ -57,12 +57,12 @@ export async function generateLinkUrl(linkCode: string): Promise<string> {
     }
     // Remove trailing slash if present
     const baseDomain = domain.replace(/\/$/, '')
-    return `${baseDomain}/access/${linkCode}`
+    return `${baseDomain}/l/${linkCode}`
   }
 
   // Fall back to current domain
   const currentDomain = window.location.origin
-  return `${currentDomain}/access/${linkCode}`
+  return `${currentDomain}/l/${linkCode}`
 }
 
 /**
@@ -89,12 +89,12 @@ export function generateLinkUrlSync(linkCode: string): string {
       domain = `https://${linksUrl}`
     }
     const baseDomain = domain.replace(/\/$/, '')
-    return `${baseDomain}/access/${linkCode}`
+    return `${baseDomain}/l/${linkCode}`
   }
 
   // Fall back to current domain
   const currentDomain = window.location.origin
-  return `${currentDomain}/access/${linkCode}`
+  return `${currentDomain}/l/${linkCode}`
 }
 
 /**

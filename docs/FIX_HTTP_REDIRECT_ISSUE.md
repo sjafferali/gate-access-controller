@@ -59,7 +59,7 @@ If you're still experiencing redirects after applying these fixes, check:
 - Clear browser cache and cookies for the domain
 - Test with curl to bypass browser caching:
   ```bash
-  curl -I -L http://entergate.app/access/O758TA9Y
+  curl -I -L http://entergate.app/l/O758TA9Y
   ```
 
 ### 3. HSTS Headers
@@ -100,7 +100,7 @@ Check your external nginx for any redirect rules:
 4. **Test with curl**:
    ```bash
    # This should NOT redirect to HTTPS
-   curl -I http://entergate.app/access/YOUR_CODE
+   curl -I http://entergate.app/l/YOUR_CODE
    ```
 
 ## How the Fix Works

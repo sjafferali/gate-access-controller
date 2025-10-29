@@ -6,7 +6,7 @@ Fixed an issue where the application was forcing HTTPS redirects even when HTTP 
 
 ## The Issue
 
-When accessing `http://entergate.app/access/O758TA9Y`, users were being redirected to `https://entergate.app/access/O758TA9Y`, breaking HTTP-only configurations.
+When accessing `http://entergate.app/l/O758TA9Y`, users were being redirected to `https://entergate.app/l/O758TA9Y`, breaking HTTP-only configurations.
 
 ## The Fix
 
@@ -71,7 +71,7 @@ Links URL: http://entergate.app                       # HTTP for public links
 ## Testing
 
 After deployment, verify the fix:
-1. Access a link using HTTP: `http://entergate.app/access/YOUR_CODE`
+1. Access a link using HTTP: `http://entergate.app/l/YOUR_CODE`
 2. Confirm no redirect to HTTPS occurs
 3. The page should load correctly over HTTP
 

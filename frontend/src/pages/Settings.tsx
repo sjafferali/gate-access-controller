@@ -8,7 +8,6 @@ import {
   FiShield,
   FiSave,
   FiRefreshCw,
-  FiDatabase,
   FiLink,
   FiAlertCircle,
   FiLock,
@@ -20,10 +19,7 @@ import { clearLinkUrlCache } from '@/utils/linkUrl'
 
 interface SettingsData {
   // General Settings
-  siteName: string
   timezone: string
-  dateFormat: string
-  timeFormat: string
 
   // URL Configuration
   adminUrl: string
@@ -32,16 +28,12 @@ interface SettingsData {
   // Access Link Defaults
   defaultExpirationHours: number
   defaultMaxUses: number
-  autoDeleteExpiredLinks: boolean
-  autoDeleteAfterDays: number
 
   // Security Settings
   webhookUrl: string
   webhookTimeout: number
   webhookRetries: number
   linkCooldownSeconds: number
-  ipWhitelist: string
-  requireAuthentication: boolean
 
   // OIDC Authentication Settings
   oidcEnabled: boolean
@@ -50,19 +42,11 @@ interface SettingsData {
   oidcClientSecret: string
   oidcRedirectUri: string
   oidcScopes: string
-
-  // Data Management
-  logRetentionDays: number
-  enableDetailedLogging: boolean
-  enableGeoLocation: boolean
 }
 
 const defaultSettings: SettingsData = {
   // General
-  siteName: 'Gate Access Controller',
   timezone: 'America/New_York',
-  dateFormat: 'MM/DD/YYYY',
-  timeFormat: '12h',
 
   // URL Configuration
   adminUrl: '',
@@ -71,16 +55,12 @@ const defaultSettings: SettingsData = {
   // Access Link Defaults
   defaultExpirationHours: 24,
   defaultMaxUses: 1,
-  autoDeleteExpiredLinks: false,
-  autoDeleteAfterDays: 30,
 
   // Security
   webhookUrl: '',
   webhookTimeout: 5000,
   webhookRetries: 3,
   linkCooldownSeconds: 60,
-  ipWhitelist: '',
-  requireAuthentication: false,
 
   // OIDC Authentication
   oidcEnabled: false,
@@ -89,11 +69,6 @@ const defaultSettings: SettingsData = {
   oidcClientSecret: '',
   oidcRedirectUri: '',
   oidcScopes: 'openid,profile,email',
-
-  // Data Management
-  logRetentionDays: 90,
-  enableDetailedLogging: true,
-  enableGeoLocation: true,
 }
 
 export default function Settings() {
@@ -112,7 +87,6 @@ export default function Settings() {
     defaultValues: defaultSettings,
   })
 
-  const autoDeleteExpiredLinks = watch('autoDeleteExpiredLinks')
   const oidcEnabled = watch('oidcEnabled')
 
   // Load settings from API and localStorage on mount
@@ -185,18 +159,6 @@ export default function Settings() {
     { value: 'Australia/Sydney', label: 'Sydney (AEDT/AEST)' },
   ]
 
-  const dateFormatOptions = [
-    { value: 'MM/DD/YYYY', label: 'MM/DD/YYYY' },
-    { value: 'DD/MM/YYYY', label: 'DD/MM/YYYY' },
-    { value: 'YYYY-MM-DD', label: 'YYYY-MM-DD' },
-    { value: 'DD.MM.YYYY', label: 'DD.MM.YYYY' },
-  ]
-
-  const timeFormatOptions = [
-    { value: '12h', label: '12-hour (AM/PM)' },
-    { value: '24h', label: '24-hour' },
-  ]
-
   const onSubmit = async (data: SettingsData) => {
     setIsSubmitting(true)
 
@@ -263,7 +225,6 @@ export default function Settings() {
     { id: 'defaults', name: 'Link Defaults', icon: FiLink },
     { id: 'security', name: 'Security', icon: FiShield },
     { id: 'authentication', name: 'Authentication', icon: FiLock },
-    { id: 'data', name: 'Data Management', icon: FiDatabase },
   ]
 
   return (
@@ -324,24 +285,6 @@ export default function Settings() {
                 <div className="space-y-5">
                   <div>
                     <label
-                      htmlFor="siteName"
-                      className="mb-1 block text-sm font-medium text-gray-700"
-                    >
-                      Site Name
-                    </label>
-                    <input
-                      {...register('siteName', { required: 'Site name is required' })}
-                      type="text"
-                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                      placeholder="Enter your site name"
-                    />
-                    {errors.siteName && (
-                      <p className="mt-1 text-sm text-red-600">{errors.siteName.message}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label
                       htmlFor="timezone"
                       className="mb-1 block text-sm font-medium text-gray-700"
                     >
@@ -360,50 +303,6 @@ export default function Settings() {
                         />
                       )}
                     />
-                  </div>
-
-                  <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
-                    <div>
-                      <label
-                        htmlFor="dateFormat"
-                        className="mb-1 block text-sm font-medium text-gray-700"
-                      >
-                        Date Format
-                      </label>
-                      <Controller
-                        name="dateFormat"
-                        control={control}
-                        render={({ field }) => (
-                          <SearchableSelect
-                            options={dateFormatOptions}
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Select date format"
-                          />
-                        )}
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="timeFormat"
-                        className="mb-1 block text-sm font-medium text-gray-700"
-                      >
-                        Time Format
-                      </label>
-                      <Controller
-                        name="timeFormat"
-                        control={control}
-                        render={({ field }) => (
-                          <SearchableSelect
-                            options={timeFormatOptions}
-                            value={field.value}
-                            onChange={field.onChange}
-                            placeholder="Select time format"
-                          />
-                        )}
-                      />
-                    </div>
                   </div>
                 </div>
               </div>
@@ -551,47 +450,6 @@ export default function Settings() {
                     </p>
                     {errors.defaultMaxUses && (
                       <p className="mt-1 text-sm text-red-600">{errors.defaultMaxUses.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <input
-                        {...register('autoDeleteExpiredLinks')}
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <label
-                        htmlFor="autoDeleteExpiredLinks"
-                        className="ml-2 block text-sm text-gray-700"
-                      >
-                        Automatically delete expired links
-                      </label>
-                    </div>
-
-                    {autoDeleteExpiredLinks && (
-                      <div className="ml-6">
-                        <label
-                          htmlFor="autoDeleteAfterDays"
-                          className="mb-1 block text-sm font-medium text-gray-700"
-                        >
-                          Delete after (days)
-                        </label>
-                        <input
-                          {...register('autoDeleteAfterDays', {
-                            min: { value: 1, message: 'Must be at least 1 day' },
-                            valueAsNumber: true,
-                          })}
-                          type="number"
-                          min="1"
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                        />
-                        {errors.autoDeleteAfterDays && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.autoDeleteAfterDays.message}
-                          </p>
-                        )}
-                      </div>
                     )}
                   </div>
                 </div>
@@ -872,112 +730,6 @@ export default function Settings() {
                         {errors.linkCooldownSeconds.message}
                       </p>
                     )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="ipWhitelist"
-                      className="mb-1 block text-sm font-medium text-gray-700"
-                    >
-                      IP Whitelist
-                    </label>
-                    <textarea
-                      {...register('ipWhitelist')}
-                      rows={4}
-                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                      placeholder="Enter IP addresses or ranges (one per line)&#10;Example:&#10;192.168.1.0/24&#10;10.0.0.1"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      Restrict access to specific IP addresses or ranges (leave empty to allow all)
-                    </p>
-                  </div>
-
-                  <div className="flex items-center">
-                    <input
-                      {...register('requireAuthentication')}
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label
-                      htmlFor="requireAuthentication"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Require authentication for admin panel
-                    </label>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Data Management Settings */}
-            {activeSection === 'data' && (
-              <div className="card">
-                <div className="mb-6 border-b border-gray-200 pb-4">
-                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
-                    <FiDatabase className="mr-2 text-primary-600" />
-                    Data Management
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Configure data retention and logging preferences
-                  </p>
-                </div>
-
-                <div className="space-y-5">
-                  <div>
-                    <label
-                      htmlFor="logRetentionDays"
-                      className="mb-1 block text-sm font-medium text-gray-700"
-                    >
-                      Log Retention Period (days)
-                    </label>
-                    <input
-                      {...register('logRetentionDays', {
-                        required: 'Log retention period is required',
-                        min: { value: 1, message: 'Must be at least 1 day' },
-                        max: { value: 365, message: 'Maximum 365 days' },
-                        valueAsNumber: true,
-                      })}
-                      type="number"
-                      min="1"
-                      max="365"
-                      className="block w-full rounded-md border border-gray-300 px-3 py-2.5 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                    />
-                    <p className="mt-1 text-xs text-gray-500">
-                      How long to keep access logs before automatic deletion
-                    </p>
-                    {errors.logRetentionDays && (
-                      <p className="mt-1 text-sm text-red-600">{errors.logRetentionDays.message}</p>
-                    )}
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center">
-                      <input
-                        {...register('enableDetailedLogging')}
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <label
-                        htmlFor="enableDetailedLogging"
-                        className="ml-2 block text-sm text-gray-700"
-                      >
-                        Enable detailed logging (includes user agent)
-                      </label>
-                    </div>
-
-                    <div className="flex items-center">
-                      <input
-                        {...register('enableGeoLocation')}
-                        type="checkbox"
-                        className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                      />
-                      <label
-                        htmlFor="enableGeoLocation"
-                        className="ml-2 block text-sm text-gray-700"
-                      >
-                        Enable geolocation tracking for access attempts
-                      </label>
-                    </div>
                   </div>
                 </div>
               </div>

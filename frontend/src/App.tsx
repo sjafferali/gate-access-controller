@@ -27,7 +27,7 @@ function App() {
     <AuthProvider>
       <Routes>
         {/* Public routes */}
-        <Route path="/access/:linkCode" element={<AccessPortal />} />
+        <Route path="/l/:linkCode" element={<AccessPortal />} />
         <Route path="/gate-opened" element={<GateOpened />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
