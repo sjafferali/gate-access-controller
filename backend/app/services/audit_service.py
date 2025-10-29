@@ -288,7 +288,7 @@ class AuditService:
             changes=None,
             context_data={
                 "name": provider.name,
-                "provider_type": provider.provider_type.value,
+                "provider_type": provider.provider_type,
                 "enabled": provider.enabled,
             },
         )
@@ -359,7 +359,7 @@ class AuditService:
             changes=None,
             context_data={
                 "name": provider.name,
-                "provider_type": provider.provider_type.value,
+                "provider_type": provider.provider_type,
                 "deleted_at": datetime.now(UTC).isoformat(),
             },
         )

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useForm, Controller } from 'react-hook-form'
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import {
   FiCalendar,
@@ -12,15 +12,23 @@ import {
   FiUser,
   FiZap,
   FiLink2,
+  FiBell,
 } from 'react-icons/fi'
-import { accessLinksApi } from '@/services/api'
-import { CreateAccessLink, LinkPurpose } from '@/types'
+import { accessLinksApi, notificationProvidersApi } from '@/services/api'
+import { CreateAccessLink, LinkPurpose, NotificationProviderType } from '@/types'
 import SearchableSelect from '@/components/form/SearchableSelect'
 
 export default function CreateLink() {
   const navigate = useNavigate()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [useCustomCode, setUseCustomCode] = useState(false)
+  const [selectedProviders, setSelectedProviders] = useState<string[]>([])
+
+  // Fetch notification providers
+  const { data: providers = [] } = useQuery({
+    queryKey: ['notification-providers-summary'],
+    queryFn: notificationProvidersApi.getSummary,
+  })
 
   // Get current date/time in datetime-local format (YYYY-MM-DDTHH:mm)
   const getCurrentDateTime = () => {
@@ -128,6 +136,7 @@ export default function CreateLink() {
       notes: data.notes || undefined,
       auto_open: data.auto_open ?? false,
       link_code: useCustomCode && data.link_code ? data.link_code.toUpperCase().trim() : undefined,
+      notification_provider_ids: selectedProviders,
     }
 
     createMutation.mutate(cleanedData)
@@ -532,6 +541,93 @@ export default function CreateLink() {
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+
+        {/* Notification Settings Section */}
+        <div className="card">
+          <div className="mb-6 border-b border-gray-200 pb-4">
+            <h2 className="flex items-center text-lg font-semibold text-gray-900">
+              <FiBell className="mr-2 text-primary-600" />
+              Notification Settings
+            </h2>
+            <p className="mt-1 text-sm text-gray-500">
+              Select which notification providers to alert when this link is used
+            </p>
+          </div>
+
+          <div className="space-y-5">
+            {providers.length === 0 ? (
+              <div className="rounded-md border border-gray-200 bg-gray-50 p-4 text-center">
+                <p className="text-sm text-gray-600">
+                  No notification providers configured yet.{' '}
+                  <button
+                    type="button"
+                    onClick={() => void navigate('/notification-providers')}
+                    className="font-medium text-primary-600 hover:text-primary-500"
+                  >
+                    Create a provider
+                  </button>{' '}
+                  to receive alerts when this link is used.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  Select the notification providers that should be alerted when this link is
+                  accessed:
+                </p>
+                {providers.map((provider) => (
+                  <div
+                    key={provider.id}
+                    className="flex items-center rounded-md border border-gray-200 p-3 hover:bg-gray-50"
+                  >
+                    <input
+                      type="checkbox"
+                      id={`provider-${provider.id}`}
+                      checked={selectedProviders.includes(provider.id)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedProviders([...selectedProviders, provider.id])
+                        } else {
+                          setSelectedProviders(selectedProviders.filter((id) => id !== provider.id))
+                        }
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                    />
+                    <label
+                      htmlFor={`provider-${provider.id}`}
+                      className="ml-3 flex flex-1 cursor-pointer items-center justify-between"
+                    >
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{provider.name}</p>
+                        <p className="text-xs text-gray-500">
+                          Type:{' '}
+                          {provider.provider_type === NotificationProviderType.PUSHOVER
+                            ? 'Pushover'
+                            : 'Webhook'}
+                        </p>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-1 text-xs font-medium ${
+                          provider.enabled
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}
+                      >
+                        {provider.enabled ? 'Enabled' : 'Disabled'}
+                      </span>
+                    </label>
+                  </div>
+                ))}
+                {selectedProviders.length > 0 && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    {selectedProviders.length} provider{selectedProviders.length !== 1 ? 's' : ''}{' '}
+                    selected
+                  </p>
+                )}
+              </div>
+            )}
           </div>
         </div>
 

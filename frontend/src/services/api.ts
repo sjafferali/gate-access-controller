@@ -141,6 +141,16 @@ export const accessLinksApi = {
       }
     }
 
+    // Get default notification providers from system settings
+    let notificationProviderIds: string[] = []
+    try {
+      const systemSettings = await settingsApi.getSettings()
+      notificationProviderIds = systemSettings.quick_link_notification_provider_ids || []
+    } catch {
+      // If we can't get system settings, continue without notification providers
+      console.warn('Could not fetch system settings for quick link notification providers')
+    }
+
     // Generate timestamp for the link name and notes
     // Format as "MM-DD-YYYY HH.MM.SS" to avoid validation issues with "/" and ":" characters
     const now = new Date()
@@ -152,7 +162,7 @@ export const accessLinksApi = {
     const seconds = String(now.getSeconds()).padStart(2, '0')
     const timestamp = `${month}-${day}-${year} ${hours}.${minutes}.${seconds}`
 
-    // Calculate expiration time
+    // Calculate expiration time - ALWAYS set an expiration for quick links
     const activeOn = new Date()
     const expiration = new Date(activeOn.getTime() + defaultExpirationHours * 60 * 60 * 1000)
 
@@ -173,9 +183,10 @@ export const accessLinksApi = {
       notes: `Quick link generated on ${readableTimestamp}. Expires in ${defaultExpirationHours} hours with ${defaultMaxUses} max use(s).`,
       purpose: LinkPurpose.OTHER,
       active_on: activeOn.toISOString(),
-      expiration: expiration.toISOString(),
+      expiration: expiration.toISOString(), // Always provide expiration for quick links
       max_uses: defaultMaxUses,
       auto_open: false,
+      notification_provider_ids: notificationProviderIds,
     }
 
     const { data } = await apiClient.post<AccessLink>('/v1/links', quickLinkData)

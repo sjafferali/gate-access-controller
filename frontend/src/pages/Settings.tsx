@@ -6,12 +6,10 @@ import {
   FiGlobe,
   FiClock,
   FiShield,
-  FiMail,
   FiSave,
   FiRefreshCw,
   FiDatabase,
   FiLink,
-  FiBell,
   FiAlertCircle,
   FiLock,
   FiKey,
@@ -52,13 +50,6 @@ interface SettingsData {
   oidcRedirectUri: string
   oidcScopes: string
 
-  // Notification Settings
-  emailNotifications: boolean
-  notificationEmail: string
-  notifyOnNewLink: boolean
-  notifyOnAccess: boolean
-  notifyOnDeniedAccess: boolean
-
   // Data Management
   logRetentionDays: number
   enableDetailedLogging: boolean
@@ -97,13 +88,6 @@ const defaultSettings: SettingsData = {
   oidcRedirectUri: '',
   oidcScopes: 'openid,profile,email',
 
-  // Notifications
-  emailNotifications: false,
-  notificationEmail: '',
-  notifyOnNewLink: false,
-  notifyOnAccess: true,
-  notifyOnDeniedAccess: true,
-
   // Data Management
   logRetentionDays: 90,
   enableDetailedLogging: true,
@@ -126,7 +110,6 @@ export default function Settings() {
     defaultValues: defaultSettings,
   })
 
-  const emailNotifications = watch('emailNotifications')
   const autoDeleteExpiredLinks = watch('autoDeleteExpiredLinks')
   const oidcEnabled = watch('oidcEnabled')
 
@@ -276,7 +259,6 @@ export default function Settings() {
     { id: 'defaults', name: 'Link Defaults', icon: FiLink },
     { id: 'security', name: 'Security', icon: FiShield },
     { id: 'authentication', name: 'Authentication', icon: FiLock },
-    { id: 'notifications', name: 'Notifications', icon: FiBell },
     { id: 'data', name: 'Data Management', icon: FiDatabase },
   ]
 
@@ -890,118 +872,6 @@ export default function Settings() {
                       Require authentication for admin panel
                     </label>
                   </div>
-                </div>
-              </div>
-            )}
-
-            {/* Notification Settings */}
-            {activeSection === 'notifications' && (
-              <div className="card">
-                <div className="mb-6 border-b border-gray-200 pb-4">
-                  <h2 className="flex items-center text-lg font-semibold text-gray-900">
-                    <FiBell className="mr-2 text-primary-600" />
-                    Notification Settings
-                  </h2>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Configure email notifications and alerts
-                  </p>
-                </div>
-
-                <div className="space-y-5">
-                  <div className="flex items-center">
-                    <input
-                      {...register('emailNotifications')}
-                      type="checkbox"
-                      className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                    />
-                    <label
-                      htmlFor="emailNotifications"
-                      className="ml-2 block text-sm text-gray-700"
-                    >
-                      Enable email notifications
-                    </label>
-                  </div>
-
-                  {emailNotifications && (
-                    <>
-                      <div>
-                        <label
-                          htmlFor="notificationEmail"
-                          className="mb-1 block text-sm font-medium text-gray-700"
-                        >
-                          <FiMail className="mr-1 inline text-gray-500" />
-                          Notification Email Address
-                        </label>
-                        <input
-                          {...register('notificationEmail', {
-                            required: emailNotifications
-                              ? 'Email is required when notifications are enabled'
-                              : false,
-                            pattern: {
-                              value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                              message: 'Invalid email address',
-                            },
-                          })}
-                          type="email"
-                          className="block w-full rounded-md border border-gray-300 px-3 py-2.5 placeholder-gray-400 shadow-sm focus:border-primary-500 focus:outline-none focus:ring-1 focus:ring-primary-500 sm:text-sm"
-                          placeholder="admin@example.com"
-                        />
-                        {errors.notificationEmail && (
-                          <p className="mt-1 text-sm text-red-600">
-                            {errors.notificationEmail.message}
-                          </p>
-                        )}
-                      </div>
-
-                      <div className="space-y-3">
-                        <label className="block text-sm font-medium text-gray-700">
-                          Notify me when:
-                        </label>
-
-                        <div className="ml-4 flex items-center">
-                          <input
-                            {...register('notifyOnNewLink')}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <label
-                            htmlFor="notifyOnNewLink"
-                            className="ml-2 block text-sm text-gray-700"
-                          >
-                            A new access link is created
-                          </label>
-                        </div>
-
-                        <div className="ml-4 flex items-center">
-                          <input
-                            {...register('notifyOnAccess')}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <label
-                            htmlFor="notifyOnAccess"
-                            className="ml-2 block text-sm text-gray-700"
-                          >
-                            Someone successfully uses an access link
-                          </label>
-                        </div>
-
-                        <div className="ml-4 flex items-center">
-                          <input
-                            {...register('notifyOnDeniedAccess')}
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-                          />
-                          <label
-                            htmlFor="notifyOnDeniedAccess"
-                            className="ml-2 block text-sm text-gray-700"
-                          >
-                            Access is denied to someone
-                          </label>
-                        </div>
-                      </div>
-                    </>
-                  )}
                 </div>
               </div>
             )}

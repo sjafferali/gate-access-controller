@@ -144,6 +144,11 @@ class AccessLink(Base, BaseModelMixin):
         nullable=True,
         comment="Maximum number of uses allowed (null = unlimited)",
     )
+    last_accessed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True),
+        nullable=True,
+        comment="Timestamp of the last successful access for rate limiting",
+    )
 
     # Auto-open feature
     auto_open: Mapped[bool] = mapped_column(
@@ -236,6 +241,23 @@ class AccessLink(Base, BaseModelMixin):
 
         if self.status == LinkStatus.DISABLED:
             return False, "Link has been disabled"
+
+        # Check rate limiting - link can only be used once per 60 seconds
+        if self.last_accessed_at:
+            now = datetime.now(UTC)
+            last_accessed = (
+                self.last_accessed_at
+                if self.last_accessed_at.tzinfo
+                else self.last_accessed_at.replace(tzinfo=UTC)
+            )
+            time_since_last_access = (now - last_accessed).total_seconds()
+
+            if time_since_last_access < 60:
+                wait_time = int(60 - time_since_last_access)
+                return (
+                    False,
+                    f"Link was recently used. Please wait {wait_time} seconds before trying again",
+                )
 
         if self.status == LinkStatus.INACTIVE:
             # Provide specific message based on why it's inactive

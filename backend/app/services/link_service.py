@@ -1,6 +1,6 @@
 """Service for managing access links"""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 
 from nanoid import generate
 from sqlalchemy import select
@@ -43,11 +43,8 @@ class LinkService:
             # Generate unique link code
             link_code = await self._generate_unique_code()
 
-        # Set default expiration if not provided
-        if not link_data.expiration:
-            link_data.expiration = datetime.now(UTC) + timedelta(
-                hours=settings.DEFAULT_LINK_EXPIRATION_HOURS
-            )
+        # Note: expiration is optional - if not provided (None), the link will never expire
+        # The frontend will handle providing a default expiration if the user doesn't explicitly choose "no expiration"
 
         # Extract notification provider IDs before dumping (since it's not a column)
         notification_provider_ids = link_data.notification_provider_ids
@@ -227,6 +224,7 @@ class LinkService:
 
         original_status = link.status
         link.granted_count += 1
+        link.last_accessed_at = datetime.now(UTC)  # Track last access for rate limiting
         link.updated_at = datetime.now()
 
         # Recalculate status using central function

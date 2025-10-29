@@ -204,7 +204,7 @@ class NotificationService:
                 "Failed to send notification",
                 provider_id=provider.id,
                 provider_name=provider.name,
-                provider_type=provider.provider_type.value,
+                provider_type=provider.provider_type,
                 error=str(e),
                 error_type=type(e).__name__,
             )

@@ -10,6 +10,7 @@ import CreateLink from '@/pages/CreateLink'
 import EditLink from '@/pages/EditLink'
 import LinkDetails from '@/pages/LinkDetails'
 import AccessPortal from '@/pages/AccessPortal'
+import GateOpened from '@/pages/GateOpened'
 import Settings from '@/pages/Settings'
 import NotificationProviders from '@/pages/NotificationProviders'
 import Login from '@/pages/Login'
@@ -27,6 +28,7 @@ function App() {
       <Routes>
         {/* Public routes */}
         <Route path="/access/:linkCode" element={<AccessPortal />} />
+        <Route path="/gate-opened" element={<GateOpened />} />
         <Route path="/login" element={<Login />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
 

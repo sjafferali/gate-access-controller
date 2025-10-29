@@ -135,6 +135,7 @@ class AccessLinkResponse(AccessLinkBase):
     deleted_at: datetime | None = None
     owner_user_id: str | None = None
     owner_user_name: str | None = None
+    last_accessed_at: datetime | None = None
     notification_provider_ids: list[str] = Field(default_factory=list)
 
     class Config:

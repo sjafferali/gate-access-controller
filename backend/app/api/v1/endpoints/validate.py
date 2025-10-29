@@ -314,6 +314,8 @@ def _get_denial_reason(message: str) -> DenialReason:
         return DenialReason.NOT_ACTIVE_YET
     elif "maximum uses" in message_lower or "max uses" in message_lower:
         return DenialReason.MAX_USES_EXCEEDED
+    elif "recently used" in message_lower or "wait" in message_lower:
+        return DenialReason.RATE_LIMITED
     elif "invalid" in message_lower:
         return DenialReason.INVALID_CODE
     else:

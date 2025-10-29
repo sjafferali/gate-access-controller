@@ -1,10 +1,10 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { format } from 'date-fns'
-import { FiCopy, FiEdit, FiZap, FiFileText } from 'react-icons/fi'
+import { FiCopy, FiEdit, FiZap, FiFileText, FiBell } from 'react-icons/fi'
 import toast from 'react-hot-toast'
-import { accessLinksApi } from '@/services/api'
-import { LinkStatus } from '@/types'
+import { accessLinksApi, notificationProvidersApi } from '@/services/api'
+import { LinkStatus, NotificationProviderType } from '@/types'
 import { copyToClipboard } from '@/utils/clipboard'
 import { formatLinkStatus } from '@/utils/format'
 import { generateLinkUrl } from '@/utils/linkUrl'
@@ -19,6 +19,12 @@ export default function LinkDetails() {
     queryKey: ['link', linkId],
     queryFn: () => accessLinksApi.get(linkId!),
     enabled: !!linkId,
+  })
+
+  // Fetch notification providers
+  const { data: providers = [] } = useQuery({
+    queryKey: ['notification-providers-summary'],
+    queryFn: notificationProvidersApi.getSummary,
   })
 
   // Generate the link URL when link data is available
@@ -189,6 +195,64 @@ export default function LinkDetails() {
                 {link.max_uses && <p>Maximum: {link.max_uses}</p>}
                 {link.remaining_uses !== null && <p>Remaining: {link.remaining_uses}</p>}
               </div>
+            </dd>
+          </div>
+
+          <div className="py-4 sm:grid sm:grid-cols-3 sm:gap-4 sm:py-5">
+            <dt className="text-sm font-medium text-gray-500">
+              <span className="flex items-center">
+                <FiBell className="mr-1 h-4 w-4 text-gray-400" />
+                Notifications
+              </span>
+            </dt>
+            <dd className="mt-1 text-sm text-gray-900 sm:col-span-2 sm:mt-0">
+              {link.notification_provider_ids && link.notification_provider_ids.length > 0 ? (
+                <div className="space-y-2">
+                  {link.notification_provider_ids.map((providerId) => {
+                    const provider = providers.find((p) => p.id === providerId)
+                    if (!provider) {
+                      return (
+                        <div
+                          key={providerId}
+                          className="rounded-md bg-gray-50 p-2 text-xs text-gray-500"
+                        >
+                          Provider ID: {providerId} (not found)
+                        </div>
+                      )
+                    }
+                    return (
+                      <div
+                        key={providerId}
+                        className="flex items-center justify-between rounded-md border border-gray-200 bg-white p-2"
+                      >
+                        <div className="flex items-center">
+                          <FiBell className="mr-2 h-4 w-4 text-primary-600" />
+                          <div>
+                            <p className="text-sm font-medium text-gray-900">{provider.name}</p>
+                            <p className="text-xs text-gray-500">
+                              Type:{' '}
+                              {provider.provider_type === NotificationProviderType.PUSHOVER
+                                ? 'Pushover'
+                                : 'Webhook'}
+                            </p>
+                          </div>
+                        </div>
+                        <span
+                          className={`rounded-full px-2 py-1 text-xs font-medium ${
+                            provider.enabled
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}
+                        >
+                          {provider.enabled ? 'Enabled' : 'Disabled'}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <span className="text-gray-500">No notification providers configured</span>
+              )}
             </dd>
           </div>
 

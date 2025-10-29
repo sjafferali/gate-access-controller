@@ -178,7 +178,7 @@ async def create_notification_provider(
             "Notification provider created",
             provider_id=provider.id,
             name=provider.name,
-            type=provider.provider_type.value,
+            type=provider.provider_type,
             user_id=user.user_id,
         )
 

@@ -39,6 +39,7 @@ class DenialReason(str, PyEnum):
     MAX_USES_EXCEEDED = "max_uses_exceeded"
     INVALID_CODE = "invalid_code"
     WEBHOOK_FAILED = "webhook_failed"
+    RATE_LIMITED = "rate_limited"
     OTHER = "other"
 
 

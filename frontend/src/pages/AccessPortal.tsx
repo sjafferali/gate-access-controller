@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react'
-import { useParams } from 'react-router-dom'
+import { useState, useMemo, useEffect, useCallback } from 'react'
+import { useParams, useNavigate } from 'react-router-dom'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { FiLock, FiUnlock, FiAlertCircle } from 'react-icons/fi'
 import toast from 'react-hot-toast'
@@ -10,7 +10,9 @@ import { formatDateTimeInUserTimezone } from '@/utils/format'
 
 export default function AccessPortal() {
   const { linkCode } = useParams<{ linkCode: string }>()
+  const navigate = useNavigate()
   const [isRequesting, setIsRequesting] = useState(false)
+  const [hasTriggeredAutoOpen, setHasTriggeredAutoOpen] = useState(false)
 
   const { data, isLoading, error } = useQuery({
     queryKey: ['validate', linkCode],
@@ -19,11 +21,28 @@ export default function AccessPortal() {
     retry: false,
   })
 
+  // Helper function to redirect to gate opened page
+  const redirectToGateOpened = useCallback(
+    (linkName?: string, notes?: string) => {
+      const params = new URLSearchParams()
+      if (linkName) params.set('name', linkName)
+      if (notes) params.set('notes', encodeURIComponent(notes))
+      params.set('timestamp', Date.now().toString())
+
+      // Navigate to the gate opened confirmation page
+      void navigate(`/gate-opened?${params.toString()}`, { replace: true })
+    },
+    [navigate]
+  )
+
   const accessMutation = useMutation({
     mutationFn: () => validationApi.requestAccess(linkCode!),
     onSuccess: (response) => {
       toast.success(response.message)
-      setIsRequesting(false)
+      // Redirect after a short delay to ensure the toast is visible
+      setTimeout(() => {
+        redirectToGateOpened(data?.name, data?.notes)
+      }, 1500)
     },
     onError: (error: AxiosError<ErrorResponse>) => {
       const message = error.response?.data?.message || 'Access denied'
@@ -31,6 +50,28 @@ export default function AccessPortal() {
       setIsRequesting(false)
     },
   })
+
+  // Handle auto-open gates
+  useEffect(() => {
+    if (data?.is_valid && data?.auto_open && !hasTriggeredAutoOpen) {
+      setHasTriggeredAutoOpen(true)
+
+      // Request access automatically
+      void validationApi
+        .requestAccess(linkCode!)
+        .then((response) => {
+          toast.success(response.message)
+          // Redirect after the gate opens
+          setTimeout(() => {
+            redirectToGateOpened(data?.name, data?.notes)
+          }, 2000)
+        })
+        .catch((error: AxiosError<ErrorResponse>) => {
+          const message = error.response?.data?.message || 'Access denied'
+          toast.error(message)
+        })
+    }
+  }, [data, linkCode, hasTriggeredAutoOpen, redirectToGateOpened])
 
   const handleRequestAccess = () => {
     setIsRequesting(true)
