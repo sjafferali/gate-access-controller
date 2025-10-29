@@ -239,21 +239,36 @@ async def update_access_link(
 
         # Update notification providers if specified
         if notification_provider_ids is not None:
-            from typing import cast
+            from app.models.notification_provider import link_notification_providers
+            from sqlalchemy import delete, insert
 
             # Capture old provider IDs before updating
             old_provider_ids = [p.id for p in link.notification_providers]
 
-            result = await db.execute(
-                select(NotificationProvider)
-                .where(NotificationProvider.id.in_(notification_provider_ids))
-                .where(NotificationProvider.is_deleted == False)  # noqa: E712
+            # Delete existing associations
+            await db.execute(
+                delete(link_notification_providers).where(
+                    link_notification_providers.c.link_id == link.id
+                )
             )
-            providers = cast(list[NotificationProvider], list(result.scalars().all()))
 
-            # Use clear and extend to properly update the relationship in async context
-            link.notification_providers.clear()
-            link.notification_providers.extend(providers)
+            # Add new associations if any providers specified
+            if notification_provider_ids:
+                # Verify providers exist and are not deleted
+                result = await db.execute(
+                    select(NotificationProvider.id)
+                    .where(NotificationProvider.id.in_(notification_provider_ids))
+                    .where(NotificationProvider.is_deleted == False)  # noqa: E712
+                )
+                valid_provider_ids = [row[0] for row in result.fetchall()]
+
+                # Insert new associations
+                if valid_provider_ids:
+                    associations = [
+                        {"link_id": link.id, "provider_id": provider_id}
+                        for provider_id in valid_provider_ids
+                    ]
+                    await db.execute(insert(link_notification_providers), associations)
 
             # Track notification provider change in audit log
             if set(old_provider_ids) != set(notification_provider_ids):
@@ -276,7 +291,15 @@ async def update_access_link(
         link.updated_at = datetime.now()
 
         await db.commit()
-        await db.refresh(link)
+
+        # Refresh the link with eagerly loaded notification providers
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link.id)
+        )
+        result = await db.execute(query)
+        link = result.scalar_one()
 
         # Create audit log entry if there were changes
         if changes:

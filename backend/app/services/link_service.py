@@ -74,20 +74,42 @@ class LinkService:
         self.db.add(link)
         await self.db.flush()  # Flush to get link.id before adding relationships
 
-        # Load and associate notification providers
+        # Associate notification providers using explicit SQL to avoid greenlet errors
+        # According to the greenlet error documentation, we should use explicit operations
+        # instead of manipulating lazy-loaded relationships in async contexts
         if notification_provider_ids:
+            from sqlalchemy import insert
+
+            from app.models.notification_provider import link_notification_providers
+
+            # Verify providers exist and are not deleted
             result = await self.db.execute(
-                select(NotificationProvider)
+                select(NotificationProvider.id)
                 .where(NotificationProvider.id.in_(notification_provider_ids))
                 .where(NotificationProvider.is_deleted == False)  # noqa: E712
             )
-            providers = list(result.scalars().all())
-            # Use extend or append instead of direct assignment to avoid lazy loading issues
-            for provider in providers:
-                link.notification_providers.append(provider)
+            valid_provider_ids = [row[0] for row in result.fetchall()]
+
+            # Insert associations directly into the junction table
+            if valid_provider_ids:
+                associations = [
+                    {"link_id": link.id, "provider_id": provider_id}
+                    for provider_id in valid_provider_ids
+                ]
+                await self.db.execute(insert(link_notification_providers), associations)
 
         await self.db.commit()
-        await self.db.refresh(link)
+
+        # Refresh the link with eagerly loaded notification providers
+        from sqlalchemy.orm import selectinload
+
+        query = (
+            select(AccessLink)
+            .options(selectinload(AccessLink.notification_providers))
+            .filter(AccessLink.id == link.id)
+        )
+        result = await self.db.execute(query)
+        link = result.scalar_one()
 
         # Create audit log entry
         await AuditService.log_link_created(

@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
-import { useSearchParams, useNavigate } from 'react-router-dom'
-import { FiCheckCircle, FiHome, FiInfo } from 'react-icons/fi'
+import { useSearchParams } from 'react-router-dom'
+import { FiCheckCircle, FiInfo } from 'react-icons/fi'
 
 export default function GateOpened() {
   const [searchParams] = useSearchParams()
-  const navigate = useNavigate()
   const [timeElapsed, setTimeElapsed] = useState(0)
 
   // Get parameters from URL
@@ -40,6 +39,21 @@ export default function GateOpened() {
     }
   }
 
+  // Handle close button click
+  const handleClose = () => {
+    // Try to close the window (only works for windows opened by JavaScript)
+    window.close()
+
+    // Check if we're still here after a brief moment
+    // If window.close() didn't work, navigate to a blank page
+    setTimeout(() => {
+      // If we're still executing code, the window didn't close
+      if (window && document) {
+        window.location.href = 'about:blank'
+      }
+    }, 100)
+  }
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4 py-8">
       <div className="mx-auto w-full max-w-md">
@@ -55,13 +69,20 @@ export default function GateOpened() {
             </div>
           </div>
 
-          {/* Success Message */}
-          <h1 className="mb-2 text-center text-2xl font-bold text-gray-900 sm:text-3xl">
-            Gate Successfully Opened!
-          </h1>
+          {/* Main Message - styled like the opening screen */}
+          <div className="mb-6 rounded-md bg-green-50 p-4">
+            <div className="flex items-center justify-center">
+              <p className="text-sm font-semibold text-green-800 sm:text-base">
+                Gate is opening
+              </p>
+            </div>
+            <p className="mt-2 text-center text-xs text-green-700 sm:text-sm">
+              You may proceed once the gate opens.
+            </p>
+          </div>
 
           <p className="mb-6 text-center text-sm text-gray-600 sm:text-base">
-            The gate was opened {formatTimeElapsed(timeElapsed)}
+            Access granted {formatTimeElapsed(timeElapsed)}
           </p>
 
           {/* Link Information Card */}
@@ -75,7 +96,7 @@ export default function GateOpened() {
 
               {/* Timestamp */}
               <div>
-                <p className="text-xs font-medium text-gray-500">Opened At:</p>
+                <p className="text-xs font-medium text-gray-500">Access granted at:</p>
                 <p className="text-sm text-gray-700">{formatTimestamp(timestamp)}</p>
               </div>
 
@@ -98,33 +119,19 @@ export default function GateOpened() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-yellow-800">Important</h3>
                 <div className="mt-1 text-xs text-yellow-700">
-                  <p>• The gate should be open now - please proceed</p>
                   <p>• This page is safe to close or refresh</p>
-                  <p>• Refreshing will NOT open the gate again</p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="space-y-3">
-            {/* Primary Action - Close or Navigate Away */}
-            <button
-              onClick={() => window.close()}
-              className="w-full rounded-lg bg-gray-600 px-6 py-3 text-base font-semibold text-white shadow transition-all hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-500 focus:ring-offset-2"
-            >
-              Close This Page
-            </button>
-
-            {/* Secondary Action - Go Home (if public home exists) */}
-            <button
-              onClick={() => void navigate('/')}
-              className="flex w-full items-center justify-center rounded-lg border border-gray-300 bg-white px-6 py-3 text-base font-medium text-gray-700 shadow-sm transition-all hover:bg-gray-50 focus:outline-none focus:ring-4 focus:ring-gray-200"
-            >
-              <FiHome className="mr-2 h-4 w-4" />
-              Return to Home
-            </button>
-          </div>
+          {/* Action Button */}
+          <button
+            onClick={handleClose}
+            className="w-full rounded-lg bg-gray-600 px-6 py-3 text-base font-semibold text-white shadow transition-all hover:bg-gray-700 focus:outline-none focus:ring-4 focus:ring-gray-500 focus:ring-offset-2"
+          >
+            Close This Page
+          </button>
         </div>
 
         {/* Footer Information */}
