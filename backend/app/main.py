@@ -49,13 +49,19 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     init_async_engine()
     logger.info("Database engine initialized")
 
-    # Load OIDC settings from database on startup
+    # Initialize session service and load OIDC settings from database on startup
     try:
+        from app.core.auth import session_service
         from app.db.base import AsyncSessionLocal
         from app.services.oidc_service import oidc_service
 
         if AsyncSessionLocal is not None:
             async with AsyncSessionLocal() as db:
+                # Initialize persistent session secret key
+                await session_service.initialize_secret_key(db)
+                logger.info("Session service initialized with persistent secret key")
+
+                # Load OIDC settings
                 await oidc_service.load_settings_from_db(db)
                 if oidc_service.is_enabled():
                     logger.info(
@@ -66,7 +72,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
                 else:
                     logger.info("OIDC authentication disabled")
     except Exception as e:
-        logger.warning("Failed to load OIDC settings from database on startup", error=str(e))
+        logger.warning("Failed to initialize services from database on startup", error=str(e))
 
     # Initialize Sentry if configured
     if settings.SENTRY_DSN:

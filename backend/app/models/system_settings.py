@@ -64,6 +64,13 @@ class SystemSettings(Base, BaseModelMixin):
         comment="Links URL for public access links (e.g., x.com)",
     )
 
+    # Session Settings
+    session_secret_key: Mapped[str | None] = mapped_column(
+        Text,
+        nullable=True,
+        comment="Persistent session secret key for cookie signatures",
+    )
+
     # OIDC Settings
     oidc_enabled: Mapped[bool] = mapped_column(
         Boolean,

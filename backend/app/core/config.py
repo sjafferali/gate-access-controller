@@ -80,6 +80,10 @@ class Settings(BaseSettings):
 
     # OpenID Connect / OAuth2 Settings (Optional)
     OIDC_ENABLED: bool = Field(default=False, description="Enable OpenID Connect authentication")
+    OIDC_FORCE_DISABLED: bool = Field(
+        default=False,
+        description="Force disable OIDC even if enabled in database (emergency override)",
+    )
     OIDC_ISSUER: str | None = Field(
         default=None, description="OIDC Issuer URL (e.g., https://auth.example.com)"
     )

@@ -1,6 +1,7 @@
 """Authentication and session management"""
 
 import json
+import secrets
 from typing import Annotated, Any
 
 from app.core.config import settings
@@ -9,6 +10,7 @@ from app.models.user import User
 from app.services.oidc_service import oidc_service
 from fastapi import Cookie, Depends, HTTPException, Request, status
 from itsdangerous import BadSignature, SignatureExpired, TimestampSigner
+from sqlalchemy.ext.asyncio import AsyncSession
 
 
 class SessionService:
@@ -16,12 +18,60 @@ class SessionService:
 
     def __init__(self) -> None:
         """Initialize session service"""
-        self.signer = TimestampSigner(settings.SESSION_SECRET_KEY)
+        self._secret_key: str | None = None
+        self._signer: TimestampSigner | None = None
         self.cookie_name = settings.SESSION_COOKIE_NAME
         self.max_age = settings.SESSION_MAX_AGE
         self.secure = settings.SESSION_SECURE
         self.httponly = settings.SESSION_HTTPONLY
         self.samesite = settings.SESSION_SAMESITE
+
+    async def initialize_secret_key(self, db: AsyncSession) -> None:
+        """Initialize or retrieve the persistent session secret key"""
+        from app.models.system_settings import SystemSettings
+        from sqlalchemy import select
+
+        # Get system settings
+        result = await db.execute(select(SystemSettings))
+        system_settings = result.scalars().first()
+
+        if system_settings and system_settings.session_secret_key:
+            # Use existing persistent secret key
+            self._secret_key = system_settings.session_secret_key
+            logger.info("Using existing persistent session secret key")
+        else:
+            # Generate a new secret key
+            new_secret = secrets.token_urlsafe(32)
+
+            if system_settings:
+                # Update existing settings
+                system_settings.session_secret_key = new_secret
+            else:
+                # Create new settings with secret key
+                system_settings = SystemSettings(session_secret_key=new_secret)
+                db.add(system_settings)
+
+            await db.commit()
+            self._secret_key = new_secret
+            logger.info("Generated and persisted new session secret key")
+
+        # Create the signer with the persistent key
+        self._signer = TimestampSigner(self._secret_key)
+
+    def get_signer(self) -> TimestampSigner:
+        """Get the signer instance, using fallback if not initialized"""
+        if self._signer:
+            return self._signer
+
+        # Fallback to environment variable or generate new one if DB not available
+        # This ensures the service still works during startup
+        secret_key = (
+            settings.SESSION_SECRET_KEY
+            if settings.SESSION_SECRET_KEY != secrets.token_urlsafe(32)
+            else settings.SESSION_SECRET_KEY
+        )
+        logger.warning("Using fallback session secret key - sessions may be invalidated on restart")
+        return TimestampSigner(secret_key)
 
     def create_session_cookie(self, user: User) -> str:
         """
@@ -37,7 +87,8 @@ class SessionService:
         user_data = json.dumps(user.to_dict())
 
         # Sign the data
-        signed_data: str = self.signer.sign(user_data).decode("utf-8")
+        signer = self.get_signer()
+        signed_data: str = signer.sign(user_data).decode("utf-8")
 
         logger.info("Created session cookie", user_id=user.user_id, sub=user.sub)
         return signed_data
@@ -54,7 +105,8 @@ class SessionService:
         """
         try:
             # Verify signature and check age
-            unsigned_data = self.signer.unsign(cookie_value.encode("utf-8"), max_age=self.max_age)
+            signer = self.get_signer()
+            unsigned_data = signer.unsign(cookie_value.encode("utf-8"), max_age=self.max_age)
 
             # Deserialize user data
             user_dict = json.loads(unsigned_data.decode("utf-8"))
@@ -131,7 +183,9 @@ async def get_optional_user(
     return user
 
 
-async def get_current_user(user: Annotated[User | None, Depends(get_optional_user)]) -> User:
+async def get_current_user(
+    request: Request, user: Annotated[User | None, Depends(get_optional_user)]
+) -> User:
     """
     Get current authenticated user
 
@@ -139,13 +193,20 @@ async def get_current_user(user: Annotated[User | None, Depends(get_optional_use
     This ensures all requests have a user context for audit logging.
 
     Args:
+        request: FastAPI request object
         user: User from optional dependency
 
     Returns:
         User: Current user or default user
+
+    Raises:
+        HTTPException: 401 if OIDC is enabled but user not authenticated (except for links requests)
     """
     if user:
         return user
+
+    # Check if this is a links request (public access)
+    is_links_request = getattr(request.state, "is_links_request", False)
 
     # If OIDC not enabled, use default user
     if not oidc_service.is_enabled():
@@ -153,11 +214,21 @@ async def get_current_user(user: Annotated[User | None, Depends(get_optional_use
         logger.debug("Using default user (OIDC not enabled)")
         return default_user
 
-    # OIDC is enabled but user not authenticated - return default user
-    # (We don't require authentication for all endpoints)
-    default_user = User.create_default_user()
-    logger.debug("Using default user (not authenticated)")
-    return default_user
+    # OIDC is enabled but user not authenticated
+    # Links requests can proceed with default user
+    if is_links_request:
+        default_user = User.create_default_user()
+        logger.debug("Using default user for links request")
+        return default_user
+
+    # OIDC is enabled and this is an admin request but user not authenticated
+    # This is a security violation - do not allow default user
+    logger.warning("OIDC enabled but user not authenticated for admin request")
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Authentication required",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
 
 
 async def require_authentication(

@@ -89,6 +89,11 @@ class OIDCService:
 
     def is_enabled(self) -> bool:
         """Check if OIDC is enabled and properly configured"""
+        # Check for force disable override first (emergency override)
+        if settings.OIDC_FORCE_DISABLED:
+            logger.info("OIDC is force disabled via environment variable override")
+            return False
+
         if not self.enabled:
             return False
 
