@@ -64,6 +64,14 @@ class SystemSettings(Base, BaseModelMixin):
         comment="Links URL for public access links (e.g., x.com)",
     )
 
+    # General Settings
+    timezone: Mapped[str | None] = mapped_column(
+        String(100),
+        nullable=True,
+        default="America/Los_Angeles",
+        comment="Timezone for displaying dates and times (IANA timezone identifier)",
+    )
+
     # Session Settings
     session_secret_key: Mapped[str | None] = mapped_column(
         Text,

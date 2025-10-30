@@ -16,6 +16,7 @@ import {
 import SearchableSelect from '@/components/form/SearchableSelect'
 import { settingsApi } from '@/services/api'
 import { clearLinkUrlCache } from '@/utils/linkUrl'
+import { updateSettingsCache, clearSettingsCache } from '@/utils/settingsCache'
 
 interface SettingsData {
   // General Settings
@@ -46,7 +47,7 @@ interface SettingsData {
 
 const defaultSettings: SettingsData = {
   // General
-  timezone: 'America/New_York',
+  timezone: 'America/Los_Angeles',
 
   // URL Configuration
   adminUrl: '',
@@ -98,7 +99,7 @@ export default function Settings() {
 
         // Load other settings from localStorage
         const storedSettings = localStorage.getItem('gateAccessSettings')
-        let localSettings = {}
+        let localSettings: Partial<SettingsData> = {}
         if (storedSettings) {
           try {
             localSettings = JSON.parse(storedSettings) as Partial<SettingsData>
@@ -107,16 +108,17 @@ export default function Settings() {
           }
         }
 
-        // Merge settings: localStorage for non-webhook/OIDC settings, API for webhook and OIDC settings
+        // Merge settings: API settings take precedence, localStorage as fallback for compatibility
         const mergedSettings = {
           ...defaultSettings,
-          ...localSettings,
+          ...localSettings, // Keep for backward compatibility
           webhookUrl: apiSettings.webhook_url || '',
           webhookTimeout: apiSettings.webhook_timeout * 1000, // Convert seconds to ms for UI
           webhookRetries: apiSettings.webhook_retries,
           linkCooldownSeconds: apiSettings.link_cooldown_seconds || 60,
           adminUrl: apiSettings.admin_url || '',
           linksUrl: apiSettings.links_url || '',
+          timezone: apiSettings.timezone || localSettings.timezone || 'America/Los_Angeles',
           oidcEnabled: apiSettings.oidc_enabled || false,
           oidcIssuer: apiSettings.oidc_issuer || '',
           oidcClientId: apiSettings.oidc_client_id || '',
@@ -166,8 +168,8 @@ export default function Settings() {
     const oidcEnabledChanged = data.oidcEnabled !== initialOidcEnabled
 
     try {
-      // Save webhook, URL, and OIDC settings to API
-      await settingsApi.saveSettings({
+      // Save webhook, URL, timezone, and OIDC settings to API
+      const savedSettings = await settingsApi.saveSettings({
         webhook_url: data.webhookUrl || null,
         webhook_token: null, // Not exposed in UI yet, could be added later
         webhook_timeout: Math.floor(data.webhookTimeout / 1000), // Convert ms to seconds
@@ -176,6 +178,7 @@ export default function Settings() {
         link_cooldown_seconds: data.linkCooldownSeconds,
         admin_url: data.adminUrl || null,
         links_url: data.linksUrl || null,
+        timezone: data.timezone || 'America/Los_Angeles',
         oidc_enabled: data.oidcEnabled,
         oidc_issuer: data.oidcIssuer || null,
         oidc_client_id: data.oidcClientId || null,
@@ -184,7 +187,10 @@ export default function Settings() {
         oidc_scopes: data.oidcScopes || null,
       })
 
-      // Save other settings to localStorage
+      // Update the settings cache with the new settings
+      updateSettingsCache(savedSettings)
+
+      // Save other settings to localStorage (for backward compatibility)
       localStorage.setItem('gateAccessSettings', JSON.stringify(data))
 
       // Clear the link URL cache so new settings take effect
@@ -215,6 +221,7 @@ export default function Settings() {
     if (window.confirm('Are you sure you want to reset all settings to defaults?')) {
       reset(defaultSettings)
       localStorage.removeItem('gateAccessSettings')
+      clearSettingsCache() // Clear the settings cache to force reload
       toast.success('Settings reset to defaults')
     }
   }

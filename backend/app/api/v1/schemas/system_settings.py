@@ -35,6 +35,12 @@ class SystemSettingsBase(BaseModel):
         description="Links URL for public access links. Include protocol (http:// or https://) or defaults to https:// (e.g., https://x.com or http://localhost:3000)",
     )
 
+    # General Settings
+    timezone: str | None = Field(
+        "America/Los_Angeles",
+        description="Timezone for displaying dates and times (IANA timezone identifier, e.g., America/Los_Angeles)",
+    )
+
     # OIDC Settings
     oidc_enabled: bool = Field(False, description="Enable OpenID Connect authentication")
     oidc_issuer: str | None = Field(

@@ -43,6 +43,7 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
                 link_cooldown_seconds=60,
                 admin_url=None,
                 links_url=None,
+                timezone="America/Los_Angeles",
                 oidc_enabled=False,
                 oidc_issuer=None,
                 oidc_client_id=None,
@@ -64,6 +65,7 @@ async def get_system_settings(db: AsyncSession = Depends(get_db)) -> Any:
             link_cooldown_seconds=settings.link_cooldown_seconds,
             admin_url=settings.admin_url,
             links_url=settings.links_url,
+            timezone=settings.timezone or "America/Los_Angeles",
             oidc_enabled=settings.oidc_enabled,
             oidc_issuer=settings.oidc_issuer,
             oidc_client_id=settings.oidc_client_id,
@@ -124,6 +126,9 @@ async def save_system_settings(
             existing_settings.admin_url = settings_data.admin_url
             existing_settings.links_url = settings_data.links_url
 
+            # Update general settings
+            existing_settings.timezone = settings_data.timezone
+
             # Update OIDC settings
             existing_settings.oidc_enabled = settings_data.oidc_enabled
             existing_settings.oidc_issuer = settings_data.oidc_issuer
@@ -156,6 +161,7 @@ async def save_system_settings(
                 link_cooldown_seconds=existing_settings.link_cooldown_seconds,
                 admin_url=existing_settings.admin_url,
                 links_url=existing_settings.links_url,
+                timezone=existing_settings.timezone or "America/Los_Angeles",
                 oidc_enabled=existing_settings.oidc_enabled,
                 oidc_issuer=existing_settings.oidc_issuer,
                 oidc_client_id=existing_settings.oidc_client_id,
@@ -176,6 +182,7 @@ async def save_system_settings(
                 link_cooldown_seconds=settings_data.link_cooldown_seconds,
                 admin_url=settings_data.admin_url,
                 links_url=settings_data.links_url,
+                timezone=settings_data.timezone,
                 oidc_enabled=settings_data.oidc_enabled,
                 oidc_issuer=settings_data.oidc_issuer,
                 oidc_client_id=settings_data.oidc_client_id,
@@ -205,6 +212,7 @@ async def save_system_settings(
                 link_cooldown_seconds=new_settings.link_cooldown_seconds,
                 admin_url=new_settings.admin_url,
                 links_url=new_settings.links_url,
+                timezone=new_settings.timezone or "America/Los_Angeles",
                 oidc_enabled=new_settings.oidc_enabled,
                 oidc_issuer=new_settings.oidc_issuer,
                 oidc_client_id=new_settings.oidc_client_id,

@@ -1,4 +1,10 @@
 import { LinkStatus } from '../types'
+import { getUserTimezone, preloadSettings } from './settingsCache'
+
+// Preload settings on module load
+preloadSettings().catch(() => {
+  // Ignore errors on initial load
+})
 
 /**
  * Format a LinkStatus enum value for display with proper capitalization
@@ -21,18 +27,8 @@ export function formatLinkStatus(status: LinkStatus): string {
  */
 export function formatDateTimeInUserTimezone(dateString: string): string {
   try {
-    // Load timezone from localStorage
-    const storedSettings = localStorage.getItem('gateAccessSettings')
-    let timezone = 'America/New_York' // Default to Eastern Time
-
-    if (storedSettings) {
-      try {
-        const settings = JSON.parse(storedSettings) as { timezone?: string }
-        timezone = settings.timezone ?? 'America/New_York'
-      } catch {
-        console.error('Failed to parse settings from localStorage')
-      }
-    }
+    // Get timezone from API settings with fallback to localStorage and default
+    const timezone = getUserTimezone()
 
     // Parse the date
     const date = new Date(dateString)

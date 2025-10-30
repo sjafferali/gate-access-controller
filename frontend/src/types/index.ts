@@ -184,6 +184,7 @@ export interface SystemSettings {
   link_cooldown_seconds: number
   admin_url: string | null
   links_url: string | null
+  timezone: string | null
   oidc_enabled: boolean
   oidc_issuer: string | null
   oidc_client_id: string | null
@@ -205,6 +206,7 @@ export interface SystemSettingsUpdate {
   link_cooldown_seconds?: number
   admin_url?: string | null
   links_url?: string | null
+  timezone?: string | null
   oidc_enabled?: boolean
   oidc_issuer?: string | null
   oidc_client_id?: string | null
